@@ -6,7 +6,7 @@ Then type `cmake ..`. The will create for you a Visual Studio .sln
 file.
 
 If you don't have CMake, set up a solution and drop the files into it.
-You will have to define `_CRT_SECURE_NO_WARNINGS` to get the C standad
+You will have to define `_CRT_SECURE_NO_WARNINGS` to get the C standard
 library. You will also have to add Comctl32.lib to get the controls.
 
 
