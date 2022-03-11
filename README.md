@@ -1,7 +1,7 @@
 # CrosswordDesigner
 Windows program to design crossword puzzles
 
-To create via CMake, create a directory called build, and naviage to it.
+To create via CMake, create a directory called build, and navigate to it.
 Then type `cmake ..`. The will create for you a Visual Studio .sln
 file.
 
