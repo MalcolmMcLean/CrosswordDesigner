@@ -2,9 +2,6 @@
 ## Root CMakeLists.txt
 ## #################################################################
 
-# Call with cmake -A Win32 
-# Currently there are 32-bit calls in the code
-
 cmake_minimum_required(VERSION 3.0)
 
 
