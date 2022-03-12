@@ -438,26 +438,16 @@ static void Load(HWND hwnd)
   char *fname;
   int err;
 
-
   fname = GetCrosswordFile(hwnd);
   if(fname)
   {
-	  CROSSWORD *newcw = loadfrompuz(fname, &err);
-	  if (!newcw)
-		  return;
-	  cw = newcw;
-	  SetPuzzleSize(hwnd, cw->width, cw->height);
-	  SendMessage(GetDlgItem(hwnd, ID_GRIDWIN), GW_SETCROSSWORD, 0, (LPARAM)cw);
-	  SendMessage(GetDlgItem(hwnd, ID_CLUEWIN), CW_SETCROSSWORD, 0, (LPARAM)cw);
-	  RepopulateListBoxes(hwnd);
-	  return;
 	  if (extensionequals(fname, ".puz"))
 	  {
-		  cw = loadfrompuz(fname, &err);
+		  CROSSWORD *newcw = loadfrompuz(fname, &err);
 		  if (cw)
 		  {
 			  cwlist = malloc(4 * sizeof(CROSSWORD *));
-			  cwlist[0] = cw;
+			  cwlist[0] = newcw;
 		  }
 	  }
 	  else
@@ -468,6 +458,7 @@ static void Load(HWND hwnd)
 	 }
 	 else
 	 {
+		 undo_push(cw);
     	cw = cwlist[0];
 		SetPuzzleSize(hwnd, cw->width, cw->height);
 		SendMessage(GetDlgItem(hwnd, ID_GRIDWIN), GW_SETCROSSWORD, 0, (LPARAM) cw);
