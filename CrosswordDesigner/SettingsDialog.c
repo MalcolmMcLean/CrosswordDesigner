@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <windows.h>
 
 #include "numwin.h"
@@ -22,8 +23,11 @@ typedef struct
 
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 static void CreateControls(HWND hwnd);
+static void InitialiseControls(HWND hwnd, SETTINGS* set);
 
 static char *GetTxt(HWND hwnd);
+static void SetTxt(HWND hwnd, const char* text);
+static void trim(char* str);
 static char *mystrdup(const char *str);
 
 void RegisterSettingsDialog(HINSTANCE hInstance)
@@ -96,6 +100,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 	  set = (SETTINGS *) ((CREATESTRUCT *) lParam)->lpCreateParams;
 	  SetWindowLongPtr(hwnd, GWLP_USERDATA, (LPARAM) set);
 	  CreateControls(hwnd);
+	  InitialiseControls(hwnd, set);
 	  //SetNumWin(GetDlgItem(hwnd, ID_WIDTH_NUM), ans->width, 1, 100, 1);
 	  //SetNumWin(GetDlgItem(hwnd, ID_HEIGHT_NUM), ans->height, 1, 100, 1);
 	  return 0;
@@ -108,12 +113,20 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 	  switch(LOWORD(wParam))
 	  {
 	    case ID_OK_BUT: // OK Button
+			free(set->title);
+			free(set->author);
+			free(set->editor);
+			free(set->publisher);
+			free(set->date);
+			free(set->copyright);
+
 			set->title = GetTxt(GetDlgItem(hwnd, ID_TITLE_EDT));
 			set->author = GetTxt(GetDlgItem(hwnd, ID_AUTHOR_EDT));
 			set->editor = GetTxt(GetDlgItem(hwnd, ID_EDITOR_EDT));
 			set->publisher = GetTxt(GetDlgItem(hwnd, ID_PUBLISHER_EDT));
 			set->date = GetTxt(GetDlgItem(hwnd, ID_DATE_EDT));
 			set->copyright = GetTxt(GetDlgItem(hwnd, ID_COPYRIGHT_EDT));
+
 		  DestroyWindow(hwnd);
           return 0;
 		case ID_CANCEL_BUT:
@@ -156,7 +169,7 @@ static void CreateControls(HWND hwnd)
 	  WS_CHILD | WS_VISIBLE | WS_BORDER,
 	  100,
 	  20, 
-	  60,
+	  rect.right - 100 -10,
 	  20,
 	  hwnd,
 	  (HMENU) ID_TITLE_EDT,
@@ -183,10 +196,10 @@ static void CreateControls(HWND hwnd)
 	  0,
 	  "edit",
 	  "",
-	  WS_CHILD | WS_VISIBLE,
+	  WS_CHILD | WS_VISIBLE | WS_BORDER,
 	  100,
 	  50, 
-	  60,
+	  rect.right - 100 -10,
 	  20,
 	  hwnd,
 	  (HMENU) ID_AUTHOR_EDT,
@@ -216,7 +229,7 @@ static void CreateControls(HWND hwnd)
 	  WS_CHILD | WS_VISIBLE | WS_BORDER,
 	  100,
 	  80, 
-	  60,
+	  rect.right - 100 -10,
 	  20,
 	  hwnd,
 	  (HMENU) ID_EDITOR_EDT,
@@ -246,7 +259,7 @@ static void CreateControls(HWND hwnd)
 	  WS_CHILD | WS_VISIBLE | WS_BORDER,
 	  100,
 	  110, 
-	  60,
+	  rect.right - 100 - 10,
 	  20,
 	  hwnd,
 	  (HMENU) ID_PUBLISHER_EDT,
@@ -276,7 +289,7 @@ static void CreateControls(HWND hwnd)
 	  WS_CHILD | WS_VISIBLE | WS_BORDER,
 	  100,
 	  140, 
-	  60,
+	  rect.right - 100 - 10,
 	  20,
 	  hwnd,
 	  (HMENU) ID_DATE_EDT,
@@ -291,7 +304,7 @@ static void CreateControls(HWND hwnd)
 	  WS_CHILD | WS_VISIBLE,
 	  10,
 	  170, 
-	  60,
+	  65,
 	  20,
 	  hwnd,
 	  (HMENU) 0,
@@ -306,7 +319,7 @@ static void CreateControls(HWND hwnd)
 	  WS_CHILD | WS_VISIBLE | WS_BORDER,
 	  100,
 	  170, 
-	  60,
+	  rect.right - 100 -10,
 	  20,
 	  hwnd,
 	  (HMENU) ID_COPYRIGHT_EDT,
@@ -413,12 +426,12 @@ static void CreateControls(HWND hwnd)
 
 static void InitialiseControls(HWND hwnd, SETTINGS *set)
 {
-	SetWindowText(GetDlgItem(hwnd, ID_TITLE_EDT), set->title);
-	SetWindowText(GetDlgItem(hwnd, ID_AUTHOR_EDT), set->author);
-	SetWindowText(GetDlgItem(hwnd, ID_EDITOR_EDT), set->editor);
-	SetWindowText(GetDlgItem(hwnd, ID_PUBLISHER_EDT), set->publisher);
-	SetWindowText(GetDlgItem(hwnd, ID_DATE_EDT), set->date);
-	SetWindowText(GetDlgItem(hwnd, ID_COPYRIGHT_EDT), set->copyright);
+	SetTxt(GetDlgItem(hwnd, ID_TITLE_EDT), set->title);
+	SetTxt(GetDlgItem(hwnd, ID_AUTHOR_EDT), set->author);
+	SetTxt(GetDlgItem(hwnd, ID_EDITOR_EDT), set->editor);
+	SetTxt(GetDlgItem(hwnd, ID_PUBLISHER_EDT), set->publisher);
+	SetTxt(GetDlgItem(hwnd, ID_DATE_EDT), set->date);
+	SetTxt(GetDlgItem(hwnd, ID_COPYRIGHT_EDT), set->copyright);
 	
 }
 
@@ -434,10 +447,43 @@ static char *GetTxt(HWND hwnd)
   GetWindowText(hwnd, answer, len+1);
   answer[len] = 0;
 
+  trim(answer);
+  if (strlen(answer) == 0)
+  {
+	  free(answer);
+	  answer = 0;
+  }
+
   return answer;
 
 }
 
+static void SetTxt(HWND hwnd, const char* text)
+{
+	if (text)
+		SetWindowText(hwnd, text);
+	else
+		SetWindowText(hwnd, "");
+}
+
+static void trim(char* str)
+{
+	int i;
+	int len;
+
+	for (i = 0; isspace((unsigned char)str[i]); i++)
+		;
+	if (i > 0)
+		memmove(str, str + i, strlen(str) + 1 - i);
+	len = strlen(str);
+	while (len--)
+	{
+		if (isspace((unsigned char)str[len]))
+			str[len] = 0;
+		else
+			break;
+	}
+}
 
 
 /*

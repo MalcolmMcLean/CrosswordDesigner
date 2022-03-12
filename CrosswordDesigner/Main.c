@@ -54,7 +54,7 @@
 
 HINSTANCE hInst;
 CROSSWORD *cw;
-SETTINGS settings;
+SETTINGS settings = { 0, };
 
 static ATOM MyRegisterClass(HINSTANCE hInstance);
 static BOOL InitInstance(HINSTANCE hInstance, int nCmdShow);
@@ -66,6 +66,7 @@ static void Undo(HWND hwnd);
 static void Save(HWND hwnd);
 static void ExportAsHTML(HWND hwnd);
 static void ExportAsInteractiveHTML(HWND hwnd);
+static void EditSettings(HWND hwnd);
 static void SetSize(HWND hwnd);
 static void SetPuzzleSize(HWND hwnd, int width, int height);
 static void CopyPuzzleGrid(HWND hwnd);
@@ -75,7 +76,10 @@ static void RepopulateListBoxes(HWND hwnd);
 static void EnableUndo(void *ptr);
 static void DisableUndo(void *ptr);
 static int FillGridCallback(void *ptr);
+static int settings_changed(CROSSWORD* cwd, SETTINGS* set);
+static int mystrcmpx(const char *stra, const char* strb);
 static int extensionequals(char *fname, char *ext);
+static char *mystrdupx(const char* str);
 
 
 int APIENTRY WinMain(HINSTANCE hInstance,
@@ -247,7 +251,7 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			ExportAsInteractiveHTML(hWnd);
 			break;
 		case ID_SETTINGS_MNU:
-			OpenSettingsDialog(hWnd, &settings);
+			EditSettings(hWnd);
 			break;
 		case ID_RESIZE_MNU:
 			undo_push(cw);
@@ -528,6 +532,40 @@ static void ExportAsInteractiveHTML(HWND hwnd)
   free(fname);
 }
 
+static void EditSettings(HWND hwnd)
+{
+	free(settings.title);
+	free(settings.author);
+	free(settings.editor);
+	free(settings.publisher);
+	free(settings.date);
+	free(settings.copyright);
+	settings.title = mystrdupx(cw->title);
+	settings.author = mystrdupx(cw->author);
+	settings.editor = mystrdupx(cw->editor);
+	settings.publisher = mystrdupx(cw->publisher);
+	settings.date = mystrdupx(cw->date);
+	settings.copyright = mystrdupx(cw->copyright);
+	OpenSettingsDialog(hwnd, &settings);
+	if (settings_changed(cw, &settings))
+	{
+		undo_push(cw);
+		free(cw->title);
+		free(cw->author);
+		free(cw->editor);
+		free(cw->publisher);
+		free(cw->date);
+		free(cw->copyright);
+		cw->title = mystrdupx(settings.title);
+		cw->author = mystrdupx(settings.author);
+		cw->editor = mystrdupx(settings.editor);
+		cw->publisher = mystrdupx(settings.publisher);
+		cw->date = mystrdupx(settings.date);
+		cw->copyright = mystrdupx(settings.copyright);
+	}
+	
+}
+
 static void SetSize(HWND hwnd)
 {
   int width, height;
@@ -715,6 +753,35 @@ static int FillGridCallback(void *ptr)
 	return wd->stopped;
 }
 
+static int settings_changed(CROSSWORD *cwd, SETTINGS *set)
+{
+	if (strcmpx(cwd->title, set->title))
+		return 1;
+	if (strcmpx(cwd->title, set->author))
+		return 1;
+	if (strcmpx(cwd->editor, set->editor))
+		return 1;
+	if (strcmpx(cwd->publisher, set->publisher))
+		return 1;
+	if (strcmpx(cwd->date, set->date))
+		return 1;
+	if (strcmpx(cwd->copyright, set->copyright))
+		return 1;
+
+	return 0;
+}
+
+static int strcmpx(const char* stra, const char* strb)
+{
+	if (stra == NULL && strb == NULL)
+		return 0;
+	if (stra == NULL)
+		return -1;
+	if (strb == NULL)
+		return 1;
+	return strcmp(stra, strb);
+}
+
 static int extensionequals(char *fname, char *ext)
 {
 	char *dot;
@@ -724,6 +791,20 @@ static int extensionequals(char *fname, char *ext)
 	if (!_stricmp(ext, dot))
 		return 1;
 	return 0;
+}
+
+static char *mystrdupx(const char *str)
+{
+	char *answer = 0;
+
+	if (str && strlen(str) > 0)
+	{
+		answer = malloc(strlen(str) + 1);
+		if (answer)
+			strcpy(answer, str);
+	}   
+
+	return answer;
 }
 
 /*
