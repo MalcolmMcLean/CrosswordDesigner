@@ -3,6 +3,6 @@
 
 #include "crossword.h"
 
-int fillgrid(CROSSWORD* cw, int (*callback)(void* ptr), void* ptr);
+int fillgrid(CROSSWORD* cw, int difficulty, int (*callback)(void* ptr), void* ptr);
 
 #endif

@@ -33,6 +33,11 @@
 #define ID_ACROSSWORDS_LB 13
 #define ID_DOWNWORDS_LB 14
 #define ID_CLUEWIN 15
+#define ID_LEVEL_GRP 17
+#define ID_LEVEL0_RAD 18
+#define ID_LEVEL1_RAD 19
+#define ID_LEVEL2_RAD 20
+#define ID_LEVEL3_RAD 21
 
 #define ID_LOAD_MNU 101
 #define ID_SAVE_MNU 102
@@ -55,12 +60,14 @@
 HINSTANCE hInst;
 CROSSWORD *cw;
 SETTINGS settings = { 0, };
+int g_difficulty = 0;
 
 static ATOM MyRegisterClass(HINSTANCE hInstance);
 static BOOL InitInstance(HINSTANCE hInstance, int nCmdShow);
 static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 static void CreateControls(HWND hwnd, CROSSWORD *cw);
 static void FillMenus(HWND hwnd);
+static int GetDifficulty(HWND hwnd);
 static void Load(HWND hwnd);
 static void Undo(HWND hwnd);
 static void Save(HWND hwnd);
@@ -160,7 +167,7 @@ static ATOM MyRegisterClass(HINSTANCE hInstance)
 	wcex.hInstance		= hInstance;
 	wcex.hIcon			= 0; //LoadIcon(hInstance, MAKEINTRESOURCE(IDI_WINHELLO4));
 	wcex.hCursor		= LoadCursor(NULL, IDC_ARROW);
-	wcex.hbrBackground	= (HBRUSH)(COLOR_WINDOW+1);
+	wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
 	wcex.lpszMenuName	= 0; //MAKEINTRESOURCE(IDC_WINHELLO4);
 	wcex.lpszClassName	= "CrosswordDesigner"; //szWindowClass;
 	wcex.hIconSm		= 0; //LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
@@ -185,7 +192,7 @@ static BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    hInst = hInstance; // Store instance handle in our global variable
 
    hWnd = CreateWindow("CrosswordDesigner", "Crossword Designer", WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, NULL, NULL, hInstance, NULL);
+      CW_USEDEFAULT, CW_USEDEFAULT, 1024, 800, NULL, NULL, hInstance, NULL);
 
    if (!hWnd)
    {
@@ -215,6 +222,8 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 	HDC hdc;
 	HWND *hwndptr;
 	WAITDIALOG *wd;
+	HBRUSH hbrush;
+	LOGBRUSH logbrush;
 
 
 	switch (message)
@@ -223,6 +232,7 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 	   cw = createcrossword(10, 10);
 	   CreateControls(hWnd, cw);
 	   FillMenus(hWnd);
+	   CheckRadioButton(hWnd, ID_LEVEL0_RAD, ID_LEVEL3_RAD, ID_LEVEL0_RAD + g_difficulty);
 	   SetPuzzleSize(hWnd, 15, 15);
 	   hwndptr = malloc(sizeof(HWND));
 	   hwndptr[0] = hWnd;
@@ -272,7 +282,7 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 		case ID_FILLGRID_MNU:
 			wd = WaitDialog(hWnd, "Filling grid");
 			undo_push(cw);
-			fillgrid(cw, FillGridCallback, wd);
+			fillgrid(cw, GetDifficulty(hWnd), FillGridCallback, wd);
 			KillWaitDialog(wd);
 			SendMessage(GetDlgItem(hWnd, ID_GRIDWIN), GW_SETCROSSWORD, 0, (LPARAM) cw);
 		    SendMessage(GetDlgItem(hWnd, ID_CLUEWIN), CW_SETCROSSWORD, 0, (LPARAM) cw);
@@ -302,6 +312,22 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 		case ID_UNDO_MNU:
 			Undo(hWnd);
 			break;
+		case ID_LEVEL_GRP:
+			assert(0);
+			break;
+		case ID_LEVEL0_RAD:
+			g_difficulty = 0;
+			break;
+		case ID_LEVEL1_RAD:
+			g_difficulty = 1;
+			break;
+		case ID_LEVEL2_RAD:
+			g_difficulty = 2;
+			break;
+		case ID_LEVEL3_RAD:
+			g_difficulty = 3;
+			assert(0);
+			break;
 		default:
 			return DefWindowProc(hWnd, message, wParam, lParam);
 		}
@@ -311,6 +337,12 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 		// TODO: Add any drawing code here...
 		//TextOut(hdc, 10, 10, "Hello World", 11);
 		EndPaint(hWnd, &ps);
+		break;
+	case WM_CTLCOLORSTATIC:
+		hbrush = (HBRUSH)GetStockObject(LTGRAY_BRUSH);
+		GetObject(hbrush, sizeof(logbrush), &logbrush);
+		SetBkColor((HDC)wParam, logbrush.lbColor);
+		return (BOOL) hbrush;
 		break;
 	case WM_DESTROY:
 		PostQuitMessage(0);
@@ -324,6 +356,11 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 static void CreateControls(HWND hwnd, CROSSWORD *cw)
 {
 	HWND hctl;
+	RECT rect;
+	GetClientRect(hwnd, &rect);
+
+	HBRUSH hbrush = (HBRUSH)GetStockObject(LTGRAY_BRUSH); //CreateSolidBrush(RGB(0, 0, 255));
+	SetClassLongPtr(hwnd, GCLP_HBRBACKGROUND, (LONG_PTR)hbrush);
 
       hctl = CreateWindowEx(
 	  0,
@@ -350,14 +387,15 @@ static void CreateControls(HWND hwnd, CROSSWORD *cw)
 	  40,
 	  425,
 	  200,
-	  120,
+	  305,
 	  hwnd,
 	  (HMENU) ID_ACROSSWORDS_LB,
 	  (HINSTANCE) GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
 	  cw);
   assert(hctl);
- 
+  SetClassLongPtr(hctl, GCLP_HBRBACKGROUND, (LONG_PTR)hbrush);
   ShowWindow(hctl, SW_SHOWNORMAL);
+
     hctl = CreateWindowEx(
 	  WS_EX_RIGHTSCROLLBAR,
 	  "listbox",
@@ -366,13 +404,12 @@ static void CreateControls(HWND hwnd, CROSSWORD *cw)
 	  240,
 	  425,
 	  190,
-	  120,
+	  305,
 	  hwnd,
 	  (HMENU) ID_DOWNWORDS_LB,
 	  (HINSTANCE) GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
 	  cw);
   assert(hctl);
- 
   ShowWindow(hctl, SW_SHOWNORMAL);
 
    hctl = CreateWindowEx(
@@ -381,16 +418,111 @@ static void CreateControls(HWND hwnd, CROSSWORD *cw)
 	  "",
 	  WS_CHILD,
 	  550,
-	  100,
+	  130,
 	  400,
-	  400,
+	  600,
 	  hwnd,
 	  (HMENU) ID_CLUEWIN,
 	  (HINSTANCE) GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
 	  cw);
   assert(hctl);
- 
   ShowWindow(hctl, SW_SHOWNORMAL);
+
+  
+  hctl = CreateWindowEx(
+	  0,
+	  "button",
+	  "Word complexity",
+	  WS_CHILD | BS_GROUPBOX,
+	  550,
+	  0,
+	  130,
+	  125,
+	  hwnd,
+	  (HMENU)ID_LEVEL_GRP,
+	  (HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
+	  0
+  );
+  assert(hctl);
+  SetClassLongPtr(hctl, GCLP_HBRBACKGROUND, (LONG_PTR)hbrush);
+  ShowWindow(hctl, SW_SHOWNORMAL);
+
+  hctl = CreateWindowEx(
+	  0,
+	  "button",
+	  "Easy (+phrases)",
+	  WS_CHILD | WS_GROUP | BS_AUTORADIOBUTTON,
+	  550,
+	  25,
+	  95,
+	  20,
+	  hwnd,
+	  (HMENU)ID_LEVEL0_RAD,
+	  (HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
+	  0
+  );
+  SendMessage(hctl, WM_SETFONT, (WPARAM)GetStockObject(DEFAULT_GUI_FONT), TRUE);
+  assert(hctl);
+  ShowWindow(hctl, SW_SHOWNORMAL);
+
+  hctl = CreateWindowEx(
+	  0,
+	  "button",
+	  "Medium",
+	  WS_CHILD  | BS_AUTORADIOBUTTON,
+	  550,
+	  50,
+	  60,
+	  20,
+	  hwnd,
+	  (HMENU)ID_LEVEL1_RAD,
+	  (HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
+	  0
+  );
+  SendMessage(hctl, WM_SETFONT, (WPARAM)GetStockObject(DEFAULT_GUI_FONT), TRUE);
+  assert(hctl);
+  ShowWindow(hctl, SW_SHOWNORMAL);
+
+  hctl = CreateWindowEx(
+	  0,
+	  "button",
+	  "Rare",
+	  WS_CHILD | BS_AUTORADIOBUTTON,
+	  550,
+	  75,
+	  60,
+	  20,
+	  hwnd,
+	  (HMENU)ID_LEVEL2_RAD,
+	  (HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
+	  0
+  );
+  SendMessage(hctl, WM_SETFONT, (WPARAM)GetStockObject(DEFAULT_GUI_FONT), TRUE);
+  assert(hctl);
+  ShowWindow(hctl, SW_SHOWNORMAL);
+
+  hctl = CreateWindowEx(
+	  0,
+	  "button",
+	  "Very rare",
+	  WS_CHILD | BS_AUTORADIOBUTTON,
+	  550,
+	  100,
+	  90,
+	  20,
+	  hwnd,
+	  (HMENU)ID_LEVEL3_RAD,
+	  (HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
+	  0
+  );
+  SendMessage(hctl, WM_SETFONT, (WPARAM)GetStockObject(DEFAULT_GUI_FONT), TRUE);
+  assert(hctl);
+  ShowWindow(hctl, SW_SHOWNORMAL);
+
+
+ 
+ 
+  
 }
 
 static void FillMenus(HWND hwnd)
@@ -467,6 +599,21 @@ static void Load(HWND hwnd)
 	 }
   }
   free(fname);
+}
+
+static int GetDifficulty(HWND hwnd)
+{
+	int level = 0;
+	if (IsDlgButtonChecked(hwnd, ID_LEVEL0_RAD))
+		level = 0;
+	else if (IsDlgButtonChecked(hwnd, ID_LEVEL1_RAD))
+		level = 1;
+	else if (IsDlgButtonChecked(hwnd, ID_LEVEL2_RAD))
+		level = 2;
+	else if (IsDlgButtonChecked(hwnd, ID_LEVEL3_RAD))
+		level = 3;
+
+	return level;
 }
 
 static void Undo(HWND hwnd)
@@ -746,23 +893,23 @@ static int FillGridCallback(void *ptr)
 
 static int settings_changed(CROSSWORD *cwd, SETTINGS *set)
 {
-	if (strcmpx(cwd->title, set->title))
+	if (mystrcmpx(cwd->title, set->title))
 		return 1;
-	if (strcmpx(cwd->title, set->author))
+	if (mystrcmpx(cwd->title, set->author))
 		return 1;
-	if (strcmpx(cwd->editor, set->editor))
+	if (mystrcmpx(cwd->editor, set->editor))
 		return 1;
-	if (strcmpx(cwd->publisher, set->publisher))
+	if (mystrcmpx(cwd->publisher, set->publisher))
 		return 1;
-	if (strcmpx(cwd->date, set->date))
+	if (mystrcmpx(cwd->date, set->date))
 		return 1;
-	if (strcmpx(cwd->copyright, set->copyright))
+	if (mystrcmpx(cwd->copyright, set->copyright))
 		return 1;
 
 	return 0;
 }
 
-static int strcmpx(const char* stra, const char* strb)
+static int mystrcmpx(const char* stra, const char* strb)
 {
 	if (stra == NULL && strb == NULL)
 		return 0;

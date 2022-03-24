@@ -16,18 +16,18 @@ typedef struct
   int id;
 } CWWORD;
 
-static int recursivefill(CROSSWORD *cw, CWWORD *words, int (*callback)(void *ptr), void *ptr);
+static int recursivefill(CROSSWORD *cw, CWWORD *words, int difficulty, int (*callback)(void *ptr), void *ptr);
 static int finished(CWWORD *words, int N);
 static int stuck(CWWORD *words, int N);
 static int tryword(CROSSWORD *cw, CWWORD *words, int index);
-static int untryword(CROSSWORD *cw, CWWORD *words, int index, char *constraint);
+static int untryword(CROSSWORD *cw, CWWORD *words, int index, char *constraint, int difficulty);
 static int chooseword(CWWORD *words, int N);
 static int updatecwword(CWWORD *words, int index);
-static int downdatecwword(CWWORD *words, int index);
+static int downdatecwword(CWWORD *words, int index, int difficulty);
 static int wordchanged(CROSSWORD *cw, CWWORD *word);
 static void setword(CROSSWORD *cw, char *word, int id);
 
-static CWWORD *getwordlist(CROSSWORD *cw);
+static CWWORD *getwordlist(CROSSWORD *cw, int difficulty);
 static void killwordlist(CWWORD *words, int N);
 static void getconstraint(CROSSWORD *cw, int id, char *ret);
 static int wordintwice(CROSSWORD* cw, char* word);
@@ -36,7 +36,7 @@ static int domatch(char *word, char *wild);
 static int strcount(char *str, int ch);
 static char *mystrdup(char *str);
 
-int fillgrid(CROSSWORD *cw, int (*callback)(void *ptr), void *ptr)
+int fillgrid(CROSSWORD *cw, int difficulty, int (*callback)(void *ptr), void *ptr)
 {
   CWWORD *words;
   int answer;
@@ -55,8 +55,8 @@ int fillgrid(CROSSWORD *cw, int (*callback)(void *ptr), void *ptr)
 	  for(ii=0;ii<cw->width;ii++)
 		  if(cw->grid[i*cw->width+ii] == 1)
 	         crossword_setcell(cw, ii, i, original[i*cw->width+ii]);
-    words = getwordlist(cw);
-    answer = recursivefill(cw, words, callback, ptr);
+    words = getwordlist(cw, difficulty);
+    answer = recursivefill(cw, words, difficulty, callback, ptr);
     killwordlist(words, cw->Nacross + cw->Ndown);
   } while(answer == -1);
 
@@ -64,7 +64,7 @@ int fillgrid(CROSSWORD *cw, int (*callback)(void *ptr), void *ptr)
   return answer;
 }
 
-static int recursivefill(CROSSWORD *cw, CWWORD *words, int (*callback)(void *ptr), void *ptr)
+static int recursivefill(CROSSWORD *cw, CWWORD *words, int difficulty, int (*callback)(void *ptr), void *ptr)
 {
 	char *oldconstraint;
 	int oldN;
@@ -82,14 +82,14 @@ static int recursivefill(CROSSWORD *cw, CWWORD *words, int (*callback)(void *ptr
 	oldN = words[index].N;
 	while(tryword(cw, words, index))
 	{
-	  ans = recursivefill(cw, words, callback, ptr);
+	  ans = recursivefill(cw, words, difficulty, callback, ptr);
 	  if(ans == 0)
 	  {
 	    free(oldconstraint);
 	    return 0;
 	  }
 	  words[index].N = --oldN;
-	  untryword(cw, words, index, oldconstraint);
+	  untryword(cw, words, index, oldconstraint, difficulty);
 	}
     free(oldconstraint);
 	return -1;
@@ -188,7 +188,7 @@ redo:
   The attempt to fit in a word has failed, so we need to make the constraints
     more generous again.
 */
-static int untryword(CROSSWORD *cw, CWWORD *words, int index, char *constraint)
+static int untryword(CROSSWORD *cw, CWWORD *words, int index, char *constraint, int difficulty)
 {
   int i;
 
@@ -199,7 +199,7 @@ static int untryword(CROSSWORD *cw, CWWORD *words, int index, char *constraint)
     if(wordchanged(cw, &words[i]))
 	{
 	  getconstraint(cw, words[i].id, words[i].constraint);
-	  downdatecwword(words, i);
+	  downdatecwword(words, i, difficulty);
 	}
   }
 
@@ -279,7 +279,7 @@ static int updatecwword(CWWORD *words, int index)
   Notes: whenthe constrints become more generous, we need
     to rebuild the list.
 */
-static int downdatecwword(CWWORD *words, int index)
+static int downdatecwword(CWWORD *words, int index, int difficulty)
 {
   
   if(strcount(words[index].constraint, '?') == strlen(words[index].constraint))
@@ -292,7 +292,7 @@ static int downdatecwword(CWWORD *words, int index)
   else
   {
      killlist(words[index].list, words[index].Ntot);
-	 words[index].list = matchword(words[index].constraint, 0, &words[index].N);
+	 words[index].list = matchword(words[index].constraint, difficulty, &words[index].N);
 	 words[index].Ntot = words[index].N;
   }
 
@@ -364,7 +364,7 @@ static void setword(CROSSWORD *cw, char *word, int id)
 	constrints except length do not have lists. The number of
 	possibilities is also limited to 100 per internal list
 */
-static CWWORD *getwordlist(CROSSWORD *cw)
+static CWWORD *getwordlist(CROSSWORD *cw, int difficulty)
 {
   CWWORD *answer;
   int len;
@@ -406,7 +406,7 @@ static CWWORD *getwordlist(CROSSWORD *cw)
 	}
 	else
 	{
-	  answer[i].list = matchword(answer[i].constraint, 0, &answer[i].N);
+	  answer[i].list = matchword(answer[i].constraint, difficulty, &answer[i].N);
 	  answer[i].Ntot = answer[i].N;
 	}
   }

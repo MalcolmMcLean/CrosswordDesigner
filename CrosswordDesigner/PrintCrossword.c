@@ -354,8 +354,13 @@ void DrawSolution(HDC hdc, CROSSWORD *cw, int x, int y, int width, int height)
 		{
 			if(cw->grid[i*cw->width+ii])
 			{
-			  sprintf(str, "%c", cw->solution[i*cw->width+ii]);
-			  TextOut(hdc, cx + xoffset, cy + yoffset, str, strlen(str));
+				SIZE sz;
+				char charstr[2] = { 0 };
+				charstr[0] = cw->solution[i * cw->width + ii];
+				GetTextExtentPoint(hdc, charstr, 1, &sz);
+				xoffset = (width / cw->width - sz.cx) / 2;
+				sprintf(str, "%c", cw->solution[i*cw->width+ii]);
+				TextOut(hdc, cx + xoffset, cy + yoffset, str, strlen(str));
 			}
 		}
 	  }
