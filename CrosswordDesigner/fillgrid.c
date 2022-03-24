@@ -19,10 +19,10 @@ typedef struct
 static int recursivefill(CROSSWORD *cw, CWWORD *words, int difficulty, int (*callback)(void *ptr), void *ptr);
 static int finished(CWWORD *words, int N);
 static int stuck(CWWORD *words, int N);
-static int tryword(CROSSWORD *cw, CWWORD *words, int index);
+static int tryword(CROSSWORD *cw, CWWORD *words, int index, int difficulty);
 static int untryword(CROSSWORD *cw, CWWORD *words, int index, char *constraint, int difficulty);
 static int chooseword(CWWORD *words, int N);
-static int updatecwword(CWWORD *words, int index);
+static int updatecwword(CWWORD *words, int index, int difficulty);
 static int downdatecwword(CWWORD *words, int index, int difficulty);
 static int wordchanged(CROSSWORD *cw, CWWORD *word);
 static void setword(CROSSWORD *cw, char *word, int id);
@@ -80,7 +80,7 @@ static int recursivefill(CROSSWORD *cw, CWWORD *words, int difficulty, int (*cal
     index = chooseword(words, cw->Nacross + cw->Ndown);
 	oldconstraint = mystrdup(words[index].constraint);
 	oldN = words[index].N;
-	while(tryword(cw, words, index))
+	while(tryword(cw, words, index, difficulty))
 	{
 	  ans = recursivefill(cw, words, difficulty, callback, ptr);
 	  if(ans == 0)
@@ -124,7 +124,7 @@ static int stuck(CWWORD *words, int N)
   Returns: 1 on success, 0 on no words left
   Note: N is maintained in caller
 */
-static int tryword(CROSSWORD *cw, CWWORD *words, int index)
+static int tryword(CROSSWORD *cw, CWWORD *words, int index, int difficulty)
 {
   int shot;
   char buff[256];
@@ -147,7 +147,7 @@ redo:
   }
   else if(words[index].N == -1)
   {
-    randword(buff, strlen(words[index].constraint), 0);
+    randword(buff, strlen(words[index].constraint), difficulty);
 	newword = buff;
 	setword(cw, newword, index);
   }
@@ -176,7 +176,7 @@ redo:
     if(wordchanged(cw, &words[i]))
 	{
 	  getconstraint(cw, words[i].id, words[i].constraint);
-	  updatecwword(words, i);
+	  updatecwword(words, i, difficulty);
 	}
   }
 
@@ -239,7 +239,7 @@ static int chooseword(CWWORD *words, int N)
   Notes: matches the existing word list (to avoid trawling
     throught he entire databse again)
 */
-static int updatecwword(CWWORD *words, int index)
+static int updatecwword(CWWORD *words, int index, int difficulty)
 {
   int i;
   char *temp;

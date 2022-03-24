@@ -83,7 +83,7 @@ void WaitDialog_Tick(WAITDIALOG *wd)
 
 	if (IsWindow(wd->hwnd))
 	{
-		while (PeekMessage(&msg, 0, 0, 0, 1))
+		while (PeekMessage(&msg,wd->hwnd, 0, 0, 1))
 		{
 			if (msg.hwnd == wd->hwnd || IsChild(wd->hwnd, msg.hwnd))
 			{

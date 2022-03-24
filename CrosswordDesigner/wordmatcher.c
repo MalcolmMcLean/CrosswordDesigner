@@ -278,6 +278,12 @@ int wordindictionary(char *word)
     return 60;
   if(wordinlist(english_words_70, 39825, word))
     return 70;
+  if (wordinlist(english_words_85, 145323, word))
+	  return 85;
+  if (wordinlist(english_words_85, 145323, word))
+	  return 85;
+  if (wordinlist(english_words_95, 221726, word))
+	  return 95; 
 
   return 0;
 }

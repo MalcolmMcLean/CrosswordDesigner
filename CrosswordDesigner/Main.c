@@ -312,22 +312,6 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 		case ID_UNDO_MNU:
 			Undo(hWnd);
 			break;
-		case ID_LEVEL_GRP:
-			assert(0);
-			break;
-		case ID_LEVEL0_RAD:
-			g_difficulty = 0;
-			break;
-		case ID_LEVEL1_RAD:
-			g_difficulty = 1;
-			break;
-		case ID_LEVEL2_RAD:
-			g_difficulty = 2;
-			break;
-		case ID_LEVEL3_RAD:
-			g_difficulty = 3;
-			assert(0);
-			break;
 		default:
 			return DefWindowProc(hWnd, message, wParam, lParam);
 		}
@@ -393,7 +377,6 @@ static void CreateControls(HWND hwnd, CROSSWORD *cw)
 	  (HINSTANCE) GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
 	  cw);
   assert(hctl);
-  SetClassLongPtr(hctl, GCLP_HBRBACKGROUND, (LONG_PTR)hbrush);
   ShowWindow(hctl, SW_SHOWNORMAL);
 
     hctl = CreateWindowEx(
@@ -444,15 +427,14 @@ static void CreateControls(HWND hwnd, CROSSWORD *cw)
 	  0
   );
   assert(hctl);
-  SetClassLongPtr(hctl, GCLP_HBRBACKGROUND, (LONG_PTR)hbrush);
   ShowWindow(hctl, SW_SHOWNORMAL);
 
   hctl = CreateWindowEx(
 	  0,
 	  "button",
-	  "Easy (+phrases)",
+	  "Easy (+ phrases)",
 	  WS_CHILD | WS_GROUP | BS_AUTORADIOBUTTON,
-	  550,
+	  555,
 	  25,
 	  95,
 	  20,
@@ -470,7 +452,7 @@ static void CreateControls(HWND hwnd, CROSSWORD *cw)
 	  "button",
 	  "Medium",
 	  WS_CHILD  | BS_AUTORADIOBUTTON,
-	  550,
+	  555,
 	  50,
 	  60,
 	  20,
@@ -488,7 +470,7 @@ static void CreateControls(HWND hwnd, CROSSWORD *cw)
 	  "button",
 	  "Rare",
 	  WS_CHILD | BS_AUTORADIOBUTTON,
-	  550,
+	  555,
 	  75,
 	  60,
 	  20,
@@ -506,7 +488,7 @@ static void CreateControls(HWND hwnd, CROSSWORD *cw)
 	  "button",
 	  "Very rare",
 	  WS_CHILD | BS_AUTORADIOBUTTON,
-	  550,
+	  555,
 	  100,
 	  90,
 	  20,
