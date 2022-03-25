@@ -42,7 +42,7 @@ char **matchword(char *word, int level, int *N)
   char **list_60;
   char **list_70;
   char** list_85;
-  char** list_90;
+  char** list_95;
   char **list_phrases;
   int N10;
   int N20;
@@ -53,7 +53,7 @@ char **matchword(char *word, int level, int *N)
   int N60;
   int N70;
   int N85;
-  int N90;
+  int N95;
   int Nphrases;
   char **answer;
 
@@ -128,13 +128,13 @@ char **matchword(char *word, int level, int *N)
 	  list_60 = matchlists(english_words_60, 13508, word, 100, &N60);
 	  list_70 = matchlists(english_words_70, 39825, word, 100, &N70);
 	  list_85 = matchlists(english_words_85, 145323, word, 100, &N85);
-	  list_90 = matchlists(english_words_95, 221726, word, 100, &N90);
+	  list_95 = matchlists(english_words_95, 221726, word, 100, &N95);
 	  answer = catN(10, list_10, N10, list_20, N20, list_35, N35,
 		  list_40, N40, list_50, N50, list_55, N55,
-		  list_60, N60, list_70, N70, list_85, N85, list_90, N90);
+		  list_60, N60, list_70, N70, list_85, N85, list_95, N95);
 	  if (!answer)
 		  return 0;
-	  *N = N10 + N20 + N35 + N40 + N50 + N55 + N60 + N70;
+	  *N = N10 + N20 + N35 + N40 + N50 + N55 + N60 + N70 + N85 + N95;
 	  free(list_10);
 	  free(list_20);
 	  free(list_35);
@@ -144,7 +144,7 @@ char **matchword(char *word, int level, int *N)
 	  free(list_60);
 	  free(list_70);
 	  free(list_85);
-	  free(list_90);
+	  free(list_95);
 	  return answer;
   default:
     assert(level >= 0 && level < 4);
@@ -163,6 +163,8 @@ char **findanagrams(char *word, int level, int *N)
   char **list_55;
   char **list_60;
   char **list_70;
+  char** list_85;
+  char** list_95;
   int N10;
   int N20;
   int N35;
@@ -171,6 +173,8 @@ char **findanagrams(char *word, int level, int *N)
   int N55;
   int N60;
   int N70;
+  int N85;
+  int N95;
   char **answer;
 
   *N = 0;
@@ -232,8 +236,36 @@ char **findanagrams(char *word, int level, int *N)
 	free(list_60);
 	free(list_70);
 	return answer;
+  case 3:
+	  list_10 = anagramlists(english_words_10, 4393, word, 100, &N10);
+	  list_20 = anagramlists(english_words_20, 7951, word, 100, &N20);
+	  list_35 = anagramlists(english_words_35, 36381, word, 100, &N35);
+	  list_40 = anagramlists(english_words_40, 6929, word, 100, &N40);
+	  list_50 = anagramlists(english_words_50, 31118, word, 100, &N50);
+	  list_55 = anagramlists(english_words_55, 6311, word, 100, &N55);
+	  list_60 = anagramlists(english_words_60, 13508, word, 100, &N60);
+	  list_70 = anagramlists(english_words_70, 39825, word, 100, &N70);
+	  list_85 = anagramlists(english_words_85, 143323, word, 100, &N85);
+	  list_95 = anagramlists(english_words_95, 221726, word, 100, &N95);
+	  answer = catN(10, list_10, N10, list_20, N20, list_35, N35,
+		  list_40, N40, list_50, N50, list_55, N55,
+		  list_60, N60, list_70, N70, list_85, N85, list_95, N95);
+	  if (!answer)
+		  return 0;
+	  *N = N10 + N20 + N35 + N40 + N50 + N55 + N60 + N70 + N85 * N95;
+	  free(list_10);
+	  free(list_20);
+	  free(list_35);
+	  free(list_40);
+	  free(list_50);
+	  free(list_55);
+	  free(list_60);
+	  free(list_70);
+	  free(list_85);
+	  free(list_95);
+	  return answer;
   default:
-    assert(level >= 0 && level < 3);
+    assert(level >= 0 && level < 4);
 	return 0;
   }
   return 0;
@@ -278,8 +310,6 @@ int wordindictionary(char *word)
     return 60;
   if(wordinlist(english_words_70, 39825, word))
     return 70;
-  if (wordinlist(english_words_85, 145323, word))
-	  return 85;
   if (wordinlist(english_words_85, 145323, word))
 	  return 85;
   if (wordinlist(english_words_95, 221726, word))

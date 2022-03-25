@@ -57,6 +57,9 @@ void RegisterGridWin(HINSTANCE hInstance)
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
   GRIDWIN *gw;
+  RECT rect;
+
+  GetClientRect(hwnd, &rect);
 
   gw = (GRIDWIN *) GetWindowLongPtr(hwnd, GWLP_USERDATA);
 
@@ -122,8 +125,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 	  break;
     case GW_SETCROSSWORD:
 	  gw->cw = (CROSSWORD *) lParam;
-	  ShowScrollBar(hwnd, SB_VERT, 0);
-	  ShowScrollBar(hwnd, SB_HORZ, 0);
+	
 	  DoScrollBars(hwnd, gw);
 	  InvalidateRect(hwnd, 0, TRUE);
 	  UpdateWindow(hwnd);
@@ -407,26 +409,41 @@ static void ScrollHMessage(HWND hwnd, GRIDWIN *gw, int msg, int val)
 
 static void DoScrollBars(HWND hwnd, GRIDWIN *gw)
 {
-  SCROLLINFO si; 
-  RECT rect;
+	SCROLLINFO si; 
+	RECT winrect;
+	RECT clientrect;
   
-    GetClientRect(hwnd, &rect);
+    GetWindowRect(hwnd, &winrect);
+	
+	if (gw->cw->height * 24 <= winrect.bottom - winrect.top)
+		ShowScrollBar(hwnd, SB_VERT, 0);
+	else
+	{
+		ShowScrollBar(hwnd, SB_VERT, 1);
+		GetClientRect(hwnd, &clientrect);
+		si.cbSize = sizeof(si);
+		si.fMask = SIF_RANGE | SIF_POS | SIF_PAGE;
+		si.nMin = 0;
+		si.nMax = gw->cw->height * 24 - 1;
+		si.nPage = (clientrect.bottom - clientrect.top);
+		si.nPos = gw->ypos;
 
-    si.cbSize = sizeof(si); 
-    si.fMask  = SIF_RANGE | SIF_POS | SIF_PAGE; 
-    si.nMin   = 0; 
-    si.nMax   = gw->cw->height * 24 -1; 
-    si.nPage  = (rect.bottom - rect.top); 
-    si.nPos   = gw->ypos; 
-        
-    SetScrollInfo(hwnd, SB_VERT, &si, 0); 
+		SetScrollInfo(hwnd, SB_VERT, &si, 1);
+	}
 
-  si.cbSize = sizeof(si); 
-  si.fMask  = SIF_RANGE | SIF_POS | SIF_PAGE; 
-  si.nMin   = 0; 
-  si.nMax   = gw->cw->width * 24 -1; 
-  si.nPage  = (rect.right - rect.left); 
-  si.nPos   = gw->xpos; 
+	if (gw->cw->height * 24 <= winrect.right - winrect.left)
+		ShowScrollBar(hwnd, SB_HORZ, 0);
+	else
+	{
+		ShowScrollBar(hwnd, SB_HORZ, 1);
+		GetClientRect(hwnd, &clientrect);
+		si.cbSize = sizeof(si);
+		si.fMask = SIF_RANGE | SIF_POS | SIF_PAGE;
+		si.nMin = 0;
+		si.nMax = gw->cw->width * 24 - 1;
+		si.nPage = (clientrect.right - clientrect.left);
+		si.nPos = gw->xpos;
 
-  SetScrollInfo(hwnd, SB_HORZ, &si, 0);
+		SetScrollInfo(hwnd, SB_HORZ, &si, 1);
+	}
 }

@@ -13,6 +13,7 @@
 #define ID_LEVEL0_RAD 5
 #define ID_LEVEL1_RAD 6
 #define ID_LEVEL2_RAD 7
+#define ID_LEVEL3_RAD 8
 
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 static void CreateControls(HWND hwnd);
@@ -89,7 +90,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 	  //set = (SETTINGS *) ((CREATESTRUCT *) lParam)->lpCreateParams;
 	  //SetWindowLongPtr(hwnd, GWLP_USERDATA, (long) set);
 	  CreateControls(hwnd);
-	  CheckRadioButton(hwnd, ID_LEVEL0_RAD, ID_LEVEL2_RAD, ID_LEVEL0_RAD);
+	  CheckRadioButton(hwnd, ID_LEVEL0_RAD, ID_LEVEL3_RAD, ID_LEVEL0_RAD);
 	  return 0;
 	case WM_DESTROY:
 	  return 0;
@@ -108,6 +109,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 		case ID_LEVEL0_RAD:
 		case ID_LEVEL1_RAD:
 		case ID_LEVEL2_RAD:
+		case ID_LEVEL3_RAD:
 		  MatchWord(hwnd);
 		  break;
 	  }
@@ -176,7 +178,7 @@ static void CreateControls(HWND hwnd)
 	  rect.right - 100,
 	  0, 
 	  80,
-	  100,
+	  125,
 	  hwnd,
 	  (HMENU) ID_LEVEL_GRP,
 	  (HINSTANCE) GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
@@ -213,12 +215,13 @@ static void CreateControls(HWND hwnd)
 	  (HINSTANCE) GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
 	  0
 	  );
+
 	   SendMessage(hctl, WM_SETFONT, (WPARAM) GetStockObject(DEFAULT_GUI_FONT), TRUE);
 
 	    hctl = CreateWindowEx(
 	  0,
 	  "button",
-	  "Hard",
+	  "Rare",
 	  WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
 	  rect.right - 90,
 	  75, 
@@ -229,6 +232,22 @@ static void CreateControls(HWND hwnd)
 	  (HINSTANCE) GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
 	  0
 	  );
+	  SendMessage(hctl, WM_SETFONT, (WPARAM)GetStockObject(DEFAULT_GUI_FONT), TRUE);
+
+		hctl = CreateWindowEx(
+			0,
+			"button",
+			"Very rare",
+			WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
+			rect.right - 90,
+			100,
+			60,
+			20,
+			hwnd,
+			(HMENU)ID_LEVEL3_RAD,
+			(HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
+			0
+		);
 		
     SendMessage(hctl, WM_SETFONT, (WPARAM) GetStockObject(DEFAULT_GUI_FONT), TRUE);
 	
@@ -261,12 +280,14 @@ static void MatchWord(HWND hwnd)
   int i;
   int level;
 
-  if(IsDlgButtonChecked(hwnd, ID_LEVEL0_RAD))
+  if (IsDlgButtonChecked(hwnd, ID_LEVEL0_RAD))
 	  level = 0;
-  else if(IsDlgButtonChecked(hwnd, ID_LEVEL1_RAD))
-	  level =1;
-  else 
+  else if (IsDlgButtonChecked(hwnd, ID_LEVEL1_RAD))
+	  level = 1;
+  else  if (IsDlgButtonChecked(hwnd, ID_LEVEL2_RAD))
 	  level = 2;
+  else
+	  level = 3;
 
   word = GetTxt(GetDlgItem(hwnd, ID_WORD_EDT));
   trim(word);
@@ -275,7 +296,7 @@ static void MatchWord(HWND hwnd)
   matches = findanagrams(word, level, &Nmatches);
  
   SendMessage(GetDlgItem(hwnd, ID_RESULTS_LST), LB_RESETCONTENT, 0, 0);
-  for(i=0;i<Nmatches;i++) 
+  for(i=0;i<Nmatches && i < 256;i++) 
 	 SendMessage(GetDlgItem(hwnd, ID_RESULTS_LST), LB_ADDSTRING, 0, (LPARAM) matches[i]);
   
   for(i=0;i<Nmatches;i++)

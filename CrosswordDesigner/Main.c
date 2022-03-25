@@ -167,7 +167,7 @@ static ATOM MyRegisterClass(HINSTANCE hInstance)
 	wcex.hInstance		= hInstance;
 	wcex.hIcon			= 0; //LoadIcon(hInstance, MAKEINTRESOURCE(IDI_WINHELLO4));
 	wcex.hCursor		= LoadCursor(NULL, IDC_ARROW);
-	wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
+	wcex.hbrBackground  = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
 	wcex.lpszMenuName	= 0; //MAKEINTRESOURCE(IDC_WINHELLO4);
 	wcex.lpszClassName	= "CrosswordDesigner"; //szWindowClass;
 	wcex.hIconSm		= 0; //LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
@@ -229,7 +229,7 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 	switch (message)
 	{
 	case WM_CREATE:
-	   cw = createcrossword(10, 10);
+	   cw = createcrossword(9, 9);
 	   CreateControls(hWnd, cw);
 	   FillMenus(hWnd);
 	   CheckRadioButton(hWnd, ID_LEVEL0_RAD, ID_LEVEL3_RAD, ID_LEVEL0_RAD + g_difficulty);
@@ -322,12 +322,12 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 		//TextOut(hdc, 10, 10, "Hello World", 11);
 		EndPaint(hWnd, &ps);
 		break;
-	case WM_CTLCOLORSTATIC:
-		hbrush = (HBRUSH)GetStockObject(LTGRAY_BRUSH);
-		GetObject(hbrush, sizeof(logbrush), &logbrush);
-		SetBkColor((HDC)wParam, logbrush.lbColor);
-		return (BOOL) hbrush;
-		break;
+	//case WM_CTLCOLORSTATIC:
+		//hbrush = (HBRUSH)GetStockObject(LTGRAY_BRUSH);
+		//GetObject(hbrush, sizeof(logbrush), &logbrush);
+		//SetBkColor((HDC)wParam, logbrush.lbColor);
+		//return (BOOL) hbrush;
+		//break;
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
@@ -342,9 +342,6 @@ static void CreateControls(HWND hwnd, CROSSWORD *cw)
 	HWND hctl;
 	RECT rect;
 	GetClientRect(hwnd, &rect);
-
-	HBRUSH hbrush = (HBRUSH)GetStockObject(LTGRAY_BRUSH); //CreateSolidBrush(RGB(0, 0, 255));
-	SetClassLongPtr(hwnd, GCLP_HBRBACKGROUND, (LONG_PTR)hbrush);
 
       hctl = CreateWindowEx(
 	  0,
@@ -515,27 +512,27 @@ static void FillMenus(HWND hwnd)
   HMENU aboutmenu;
 
   filemenu = CreateMenu();
-  AppendMenu(filemenu, MF_STRING, ID_LOAD_MNU, "Open");
-  AppendMenu(filemenu, MF_STRING, ID_SAVE_MNU, "Save");
+  AppendMenu(filemenu, MF_STRING, ID_LOAD_MNU, "Open...");
+  AppendMenu(filemenu, MF_STRING, ID_SAVE_MNU, "Save...");
  // AppendMenu(filemenu, MF_STRING, ID_PRINT_MNU, "Print");
-  AppendMenu(filemenu, MF_STRING, ID_HTML_MNU, "Export as HTML");
-  AppendMenu(filemenu, MF_STRING, ID_HTML_INTERACTIVE_MNU, "Export as interactive HTML");
+  AppendMenu(filemenu, MF_STRING, ID_HTML_MNU, "Export as HTML...");
+  AppendMenu(filemenu, MF_STRING, ID_HTML_INTERACTIVE_MNU, "Export as interactive HTML...");
 
   editmenu = CreateMenu();
   AppendMenu(editmenu, MF_STRING, ID_UNDO_MNU, "Undo");
-  AppendMenu(editmenu, MF_STRING, ID_RESIZE_MNU, "Set size");
+  AppendMenu(editmenu, MF_STRING, ID_RESIZE_MNU, "Set size...");
   AppendMenu(editmenu, MF_STRING, ID_STARTGRID_MNU, "Starter grid");
-  AppendMenu(editmenu, MF_STRING, ID_SETTINGS_MNU, "Settings");
+  AppendMenu(editmenu, MF_STRING, ID_SETTINGS_MNU, "Settings...");
   AppendMenu(editmenu, MF_STRING, ID_COPY_PUZZLE_MNU, "Copy puzzle grid");
   AppendMenu(editmenu, MF_STRING, ID_COPY_SOLUTION_MNU, "Copy solution grid");
-  AppendMenu(editmenu, MF_STRING, ID_WORDMATCHER_MNU, "Word matcher");
-  AppendMenu(editmenu, MF_STRING, ID_ANAGRAMFINDER_MNU, "Anagram finder");
+  AppendMenu(editmenu, MF_STRING, ID_WORDMATCHER_MNU, "Word matcher...");
+  AppendMenu(editmenu, MF_STRING, ID_ANAGRAMFINDER_MNU, "Anagram finder...");
   AppendMenu(editmenu, MF_STRING, ID_FILLGRID_MNU, "Fill grid");
-  AppendMenu(editmenu, MF_STRING, ID_GENFROMLIST_MNU, "Generate from word list");
+  AppendMenu(editmenu, MF_STRING, ID_GENFROMLIST_MNU, "Generate from word list...");
 
   aboutmenu = CreateMenu();
-  AppendMenu(aboutmenu, MF_STRING, ID_HELP_MNU, "Help");
-  AppendMenu(aboutmenu, MF_STRING, ID_ABOUT_MNU, "About");
+  AppendMenu(aboutmenu, MF_STRING, ID_HELP_MNU, "Help...");
+  AppendMenu(aboutmenu, MF_STRING, ID_ABOUT_MNU, "About...");
 
   mainmenu = CreateMenu();
   AppendMenu(mainmenu, MF_POPUP, (UINT_PTR) filemenu, "File");
