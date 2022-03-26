@@ -286,7 +286,7 @@ error_exit:
 }
 
 
-int main(int argc, char **argv)
+int testpuzzlemain(int argc, char **argv)
 {
    CROSSWORD *cw;
    cw = parseipuz(argv[1]);
