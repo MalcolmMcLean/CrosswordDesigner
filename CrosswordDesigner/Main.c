@@ -3,6 +3,8 @@
 #include <time.h>
 #include <assert.h>
 
+#include "resource1.h"
+
 #include "crossword.h"
 #include "fillgrid.h"
 #include "crosswordhtml.h"
@@ -167,7 +169,7 @@ static ATOM MyRegisterClass(HINSTANCE hInstance)
 	wcex.cbClsExtra		= 0;
 	wcex.cbWndExtra		= 0;
 	wcex.hInstance		= hInstance;
-	wcex.hIcon			= 0; //LoadIcon(hInstance, MAKEINTRESOURCE(IDI_WINHELLO4));
+	wcex.hIcon			= LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
 	wcex.hCursor		= LoadCursor(NULL, IDC_ARROW);
 	wcex.hbrBackground  = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
 	wcex.lpszMenuName	= 0; //MAKEINTRESOURCE(IDC_WINHELLO4);
