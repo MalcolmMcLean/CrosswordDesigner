@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <stdlib.h>
 #include <time.h>
 #include <assert.h>
 
@@ -7,6 +8,7 @@
 #include "crosswordhtml.h"
 #include "crosswordxpf.h"
 #include "crosswordpuz.h"
+#include "crosswordipuz.h"
 #include "crosswordfromlist.h"
 #include "genjigsaw.h"
 #include "undo.h"
@@ -555,9 +557,18 @@ static void Load(HWND hwnd)
 	  if (extensionequals(fname, ".puz"))
 	  {
 		  CROSSWORD *newcw = loadfrompuz(fname, &err);
-		  if (cw)
+		  if (newcw)
 		  {
 			  cwlist = malloc(4 * sizeof(CROSSWORD *));
+			  cwlist[0] = newcw;
+		  }
+	  }
+	  else if (extensionequals(fname, ".ipuz"))
+	  {
+		  CROSSWORD* newcw = loadfromipuz(fname, &err);
+		  if (newcw)
+		  {
+			  cwlist = malloc(4 * sizeof(CROSSWORD*));
 			  cwlist[0] = newcw;
 		  }
 	  }
@@ -620,6 +631,8 @@ static void Save(HWND hwnd)
   {
 	  if (extensionequals(fname, ".puz"))
 		  saveaspuz(cw, fname);
+	  else if (extensionequals(fname, ".ipuz"))
+		  saveasipuz(cw, fname);
 	  else
 		  saveasxpf(cw, fname);
   }

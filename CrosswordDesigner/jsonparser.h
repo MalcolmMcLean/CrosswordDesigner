@@ -26,7 +26,6 @@ typedef struct
 
 typedef JSONParser JSONArray;
 
-    JSONParser *JSONParser_null(void);
     JSONParser *JSONParser_clone(const JSONParser *jp);
     JSONParser *JSONParser_create(const char *json);
     void killJSONParser(JSONParser *jp);

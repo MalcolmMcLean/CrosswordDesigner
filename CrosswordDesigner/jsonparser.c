@@ -6,6 +6,8 @@
 */
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
+
 #include "jsonparser.h"
 
 static int getKey(JSONParser *jp, const char *id);
@@ -42,19 +44,38 @@ Usage:
  
  
      int err = 0;  // err is sticky
-     JSONParser jparser( json );
-     bool flag = jparser.getBoolean("aflag", &err);
-     int ix = jparser.getInteger("aninteger", &err);
-     int N = jparser.getArrayLength("anarray", &err);
+     JSONParser *jparser = JSONParser_create( json );
+     int flag = JSONParser_getBoolean(jparser, "aflag", &err);
+     int ix = JSONParser_getInteger(jparser, "aninteger", &err);
+     int N = JSONParser_getArrayLength(jparser, "anarray", &err);
      if(N == -1)
         // not an array 
      for(i=0;i<N;i++)
-       array[i] = jparser.getInteger("anarray", i, &err);
-     JSONParser subparser = jparser.getObject("subobject", &err));
-     int subint = subparser.getInteger("value");
+       array[i] = JSONParser_getIntegerA(jparser, "anarray", i, &err);
+     JSONParser *subparser = JSONParser_getObject(jparser, "subobject", &err));
+     int subint = JSONParser_getInteger(subpraser, "value", &err);
  
      if(err)
         // something went wrong, we must have mistype a field name or something
+
+     killJSONParser(jparser); // All parsers need to be destroed explicitly
+
+    If the JSON contains single-dimensional arrays, you can query them using the
+    JSONParser_getXXXA() functions. This accounts for most simple JSON.
+
+    If you have utli-dimensional arrays, you will have to query them using
+    the JSONArray interface.
+
+    JSONArray *jarray = JSONParser_getArray(jparser, "arrayid", &err);
+    for(i-0;i<JSONArray_getLength(jarray);i++)
+    {
+       JSONArray *nestedarray = JSONArray_getArray(jarray, i, &err);
+       for(j =0; j < JSONArray_getlength(nestedaray);j++)
+       {
+           int x = JSONArray_getInteger(nestedarray, j, &err);
+       }
+       killJSONArray(nestedarray);
+    }
  
  Notes: you need to know the format you are expect the data to arrive in, the parser has no
    way of querying for fields existence, other than reporting error for missing fields.
@@ -65,7 +86,7 @@ Usage:
 /*
    default parser, can't parse anything
  */
-JSONParser *JSONParser_null(void)
+static JSONParser *JSONParser_null(void)
 {
     JSONParser *jp;
     
@@ -177,6 +198,8 @@ void killJSONParser(JSONParser *jp)
 
 void killJSONArray(JSONArray *ja)
 {
+    if (ja)
+        assert(ja->mIsArray);
    killJSONParser(ja);
 }
  
@@ -213,7 +236,7 @@ JSONParser *JSONParser_getObjectA(JSONParser *jp, const char *id, int index, int
 {
     int key;
     int token_index;
-    
+
     key = getKey(jp, id);
     if(key >= 0 && key +1 < jp->mLastToken && jp->mTokens[key+1].type == JSMN_ARRAY)
     {
@@ -274,11 +297,16 @@ JSONParser *JSONArray_getObject(JSONArray *ja, int index, int *err)
 
    token_index = getArrayIndex(ja, ja->mFirstKey-1, index);
 
-   if(token_index >= 0)
+   if (token_index >= 0)
    {
       if(ja->mTokens[token_index].type == JSMN_ARRAY)
       {
         JSONParser *answer = JSONParser_null();
+        if (!answer)
+        {
+            *err = -1;
+            return 0;
+        }
         answer->mJson = ja->mJson;
         answer->mTokens = ja->mTokens;
         answer->mNtokens = ja->mNtokens;
@@ -295,6 +323,7 @@ JSONParser *JSONArray_getObject(JSONArray *ja, int index, int *err)
 
 JSONArray *JSONArray_getArray(JSONArray *ja, int index, int *err)
 {
+   JSONParser *answer = 0;
    int token_index;
 
    token_index = getArrayIndex(ja, ja->mFirstKey-1, index);
@@ -303,64 +332,31 @@ JSONArray *JSONArray_getArray(JSONArray *ja, int index, int *err)
    {
       if(ja->mTokens[token_index].type == JSMN_ARRAY)
       {
-        JSONParser *answer = JSONParser_null();
+        answer = JSONParser_null();
+        if (!answer)
+        {
+            *err = -1;
+            return 0;
+        }
         answer->mJson = ja->mJson;
         answer->mTokens = ja->mTokens;
         answer->mNtokens = ja->mNtokens;
         answer->mFirstKey = token_index+1;
         answer->mLastToken = token_index + getSkip(ja, token_index);
         answer->mIsRoot = 0;
+        answer->mIsArray = 1;
         return answer;
      }
   }
   *err = -1;
-  return JSONParser_null();
-}
+  answer = JSONParser_null();
+  if (answer)
+      answer->mIsArray = 1;
 
-int JSONArray_getBoolean(JSONArray *ja, int index, int *err)
-{
-   int token_index;
-   token_index = getArrayIndex(ja, ja->mFirstKey -1, index);
-   if (token_index >= 0)
-      return jsonboolval(ja->mJson, &ja->mTokens[token_index], err);
-   *err = 1;
-
-   return -1;
+  return answer;
 }
 
 
-int JSONArray_getInteger(JSONArray *ja, int index, int *err)
-{
-   int token_index;
-   token_index = getArrayIndex(ja, ja->mFirstKey -1, index);
-   if (token_index >= 0)
-      return jsonintval(ja->mJson, &ja->mTokens[token_index], err);
-   *err = 1;
-
-   return -1;
-}
-
-double JSONArray_getReal(JSONArray *ja, int index, int *err)
-{
-   int token_index;
-
-   token_index = getArrayIndex(ja, ja->mFirstKey -1, index);
-   if (token_index >= 0)
-      return jsonrealval(ja->mJson, &ja->mTokens[token_index], err);
-   *err = 1;
-   return 0.0;
-}
-
-char *JSONArray_getString(JSONArray *ja, int index, int *err)
-{
-   int token_index;
-
-   token_index = getArrayIndex(ja, ja->mFirstKey -1, index);
-   if (token_index >= 0)
-      return jsonstringval(ja->mJson, &ja->mTokens[token_index], err);
-   *err = 1;
-   return 0;
-}
 
 /*
    Length (number of elements) in an array
@@ -471,7 +467,7 @@ static int getArrayIndex(JSONParser *jp, int array, int index)
     int i;
     int answer;
     
-    if(index >= jp->mTokens[array].size)
+    if(index < 0 || index >= jp->mTokens[array].size)
         return -1;
     answer = array +1;
     for(i=0;i<index;i++)
@@ -519,7 +515,7 @@ int JSONParser_getInteger(JSONParser *jp, const char *id, int *err)
     {
         return jsonintval(jp->mJson, &jp->mTokens[key+1], err);
     }
-    *err = 1;
+    *err = -1;
     return 0;
 
 }
@@ -536,6 +532,7 @@ char *JSONParser_getString(JSONParser *jp, const char *id, int *err)
     *err = -1;
     return 0;
 }
+
 
 int JSONParser_getBooleanA(JSONParser *jp, const char *id, int index, int *err)
 {
@@ -617,6 +614,52 @@ char *JSONParser_getStringA(JSONParser *jp, const char *id, int index, int *err)
     *err = -1;
     return 0;
 }
+
+int JSONArray_getBoolean(JSONArray* ja, int index, int* err)
+{
+    int token_index;
+    token_index = getArrayIndex(ja, ja->mFirstKey - 1, index);
+    if (token_index >= 0)
+        return jsonboolval(ja->mJson, &ja->mTokens[token_index], err);
+    *err = -1;
+
+    return -1;
+}
+
+
+int JSONArray_getInteger(JSONArray* ja, int index, int* err)
+{
+    int token_index;
+    token_index = getArrayIndex(ja, ja->mFirstKey - 1, index);
+    if (token_index >= 0)
+        return jsonintval(ja->mJson, &ja->mTokens[token_index], err);
+    *err = -1;
+
+    return -1;
+}
+
+double JSONArray_getReal(JSONArray* ja, int index, int* err)
+{
+    int token_index;
+
+    token_index = getArrayIndex(ja, ja->mFirstKey - 1, index);
+    if (token_index >= 0)
+        return jsonrealval(ja->mJson, &ja->mTokens[token_index], err);
+    *err = -1;
+    return 0.0;
+}
+
+char* JSONArray_getString(JSONArray* ja, int index, int* err)
+{
+    int token_index;
+
+    token_index = getArrayIndex(ja, ja->mFirstKey - 1, index);
+    if (token_index >= 0)
+        return jsonstringval(ja->mJson, &ja->mTokens[token_index], err);
+    *err = -1;
+    return 0;
+}
+
 
 static int jsoneq(const char *json, jsmntok_t *tok, const char *s)
 {

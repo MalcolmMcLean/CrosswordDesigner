@@ -1,20 +1,34 @@
+#include "crosswordipuz.h"
 #include "crossword.h"
 #include "jsonparser.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 
-CROSSWORD *sparseipuz(char *json);
+CROSSWORD *sparseipuz(char *json, int *error);
 static char *fslurp(char *filename);
 
-void fsaveasipuz(FILE *fp, CROSSWORD *cw)
+int saveasipuz(CROSSWORD* cw, char* fname)
+{
+    int answer = 0;
+    FILE *fp = fopen(fname, "w");
+    if (fp)
+        fsaveasipuz(cw, fp);
+    else
+        answer = -1;
+    fclose(fp);
+
+    return answer;
+}
+
+int fsaveasipuz(CROSSWORD *cw, FILE *fp)
 {
    int x, y;
 
    fprintf(fp, "{\n");
    fprintf(fp, "\"origin\": \"Crossword designer by Malcolm McLean\",\n");
    fprintf(fp, "\"version\": \"http://ipuz.org/v1\",\n");
-   fprintf(fp, "\"kind\": [\"http://ipuz.org/crossword#1\"]\n");
+   fprintf(fp, "\"kind\": [\"http://ipuz.org/crossword#1\"],\n");
    fprintf(fp, "\"empty\": \"0\",\n");
   
    fprintf(fp, "\"dimensions\": { \"width\": %d, \"height\": %d },\n",
@@ -57,8 +71,8 @@ void fsaveasipuz(FILE *fp, CROSSWORD *cw)
         fprintf(fp, ",");
       fprintf(fp, "\n");
    }
-   fprintf(fp, "],\n");
-   printf("\n");    
+   fprintf(fp, "    ],\n");
+   fprintf(fp, "\n");    
 
    fprintf(fp, "    \"Down\": [\n");
    for (y = 0; y < cw->Ndown; y++)
@@ -78,6 +92,7 @@ void fsaveasipuz(FILE *fp, CROSSWORD *cw)
          fprintf(fp, ",");
       fprintf(fp, "\n");
    }
+   fprintf(fp, "    ]\n");
    fprintf(fp, "},\n");
    fprintf(fp, "\n");
    fprintf(fp, "\"solution\":\n");
@@ -103,20 +118,22 @@ void fsaveasipuz(FILE *fp, CROSSWORD *cw)
    fprintf(fp, "]\n");
    fprintf(fp, "}\n"); 
 
+   return 0; 
 }
 
-CROSSWORD *parseipuz(char *filename)
+CROSSWORD *loadfromipuz(char *filename, int *err)
 {
    char *json = fslurp(filename);
    if (json)
-      return sparseipuz(json);
+       return sparseipuz(json, err);
    else
-      printf("Can't open file\n");
+       if (err)
+           *err = -1;
    return 0;
    
 }
 
-CROSSWORD *sparseipuz(char *json)
+CROSSWORD *sparseipuz(char *json, int *error)
 {
    CROSSWORD *cw = 0;
    int err = 0;
@@ -132,6 +149,10 @@ CROSSWORD *sparseipuz(char *json)
    int width = 0;
    int height = 0;
    int x, y;
+
+   json = strchr(json, '{');
+   if (!json)
+       goto parse_error;
 
    jparser = JSONParser_create(json);
    if (!jparser)
@@ -232,6 +253,7 @@ CROSSWORD *sparseipuz(char *json)
    killJSONParser(clues);
    killJSONParser(dimensions);
    killJSONParser(jparser);
+
    return cw; 
 parse_error:
    killJSONArray(clue);
@@ -243,6 +265,8 @@ parse_error:
    killJSONParser(dimensions);
    killJSONParser(jparser);
     killcrossword(cw);
+    if (error)
+        *error = -2;
     return 0;
 }
 
@@ -285,12 +309,3 @@ error_exit:
       
 }
 
-
-int testpuzzlemain(int argc, char **argv)
-{
-   CROSSWORD *cw;
-   cw = parseipuz(argv[1]);
-   if (cw)
-     fsaveasipuz(stdout, cw);
-   return 0;
-}

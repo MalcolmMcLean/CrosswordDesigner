@@ -18,7 +18,7 @@ char *GetCrosswordFile(HWND hwnd)
    ofn.lStructSize = sizeof(OPENFILENAME); 
    ofn.hwndOwner = hwnd; 
    ofn.hInstance = (HINSTANCE) GetWindowLongPtr(hwnd, GWLP_HINSTANCE); 
-   ofn.lpstrFilter = "Crossword files\0*.xpf;*.xml;\0Puzzle files\0*.puz\0All files\0*.*\0\0"; 
+   ofn.lpstrFilter = "Crossword files\0*.xpf;*.xml;\0Puzzle files\0*.puz\0IPuzzle files\0*.ipuz\0All files\0*.*\0\0"; 
    ofn.lpstrCustomFilter = 0; 
    ofn.nMaxCustFilter = 0; 
    ofn.nFilterIndex = 0; 
@@ -54,7 +54,7 @@ char *GetCrosswordSaveFile(HWND hwnd)
    ofn.lStructSize = sizeof(OPENFILENAME); 
    ofn.hwndOwner = hwnd; 
    ofn.hInstance = (HINSTANCE) GetWindowLongPtr(hwnd, GWLP_HINSTANCE); 
-   ofn.lpstrFilter = "Crossword files\0*.xpf;*.xml\0XPF files\0*.xpf\0Puzzle files\0*.puz\0All files\0*.*\0\0"; 
+   ofn.lpstrFilter = "Crossword files\0*.xpf;*.xml\0XPF files\0*.xpf\0Puzzle files\0*.puz\0IPuzzle files\0\*.ipuz\0All files\0*.*\0\0"; 
    ofn.lpstrCustomFilter = 0; 
    ofn.nMaxCustFilter = 0; 
    ofn.nFilterIndex = 0; 
