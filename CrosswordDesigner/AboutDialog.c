@@ -126,7 +126,7 @@ static void CreateControls(HWND hwnd)
 	  0
 	  );
 
-   SetWindowText(hctl, "Crossword Designer\n\nBy Malcolm McLean\n\n version 1.4 (prototype)\n\nThis program is freeware");
+   SetWindowText(hctl, "Crossword Designer\n\nBy Malcolm McLean\n\n version 1.5\n\nThis program is freeware");
 
 
 	hctl = CreateWindowEx(
