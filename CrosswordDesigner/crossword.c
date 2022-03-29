@@ -150,6 +150,75 @@ int crossword_setcell(CROSSWORD *cw, int cx, int cy, char ch)
 
 }
 
+int crossword_setsolutioncell(CROSSWORD *cw, int cx, int cy, char ch)
+{
+	int xstart = -1;
+	int ystart = -1;
+	int acrossnumber = 0;
+	int downnumber = 0;
+	int acrossindex = 0;
+	int downindex = 0;
+	int i;
+
+	assert(cx >= 0 && cx < cw->width);
+	assert(cy >= 0 && cy < cw->height);
+
+	assert(cw->grid[cy * cw->width + cx] == 1);
+	cw->solution[cy * cw->width + cx] = ch;
+
+	if (acrosswordstart(cw->grid, cw->width, cw->height, cx, cy))
+		xstart = cx;
+	else if (cx > 0 && cw->grid[cy * cw->width + cx - 1] == 1)
+	{
+		xstart = cx - 1;
+		while (!acrosswordstart(cw->grid, cw->width, cw->height, xstart, cy))
+		{
+			xstart--;
+			if (xstart < 0)
+				break;
+		}
+	}
+
+	if (xstart != -1)
+	{
+		acrossnumber = cw->numbers[cy * cw->width + xstart];
+		assert(acrossnumber > 0);
+		for (i = 0; i < cw->Nacross; i++)
+			if (cw->numbersacross[i] == acrossnumber)
+				break;
+		assert(i < cw->numbersacross);
+		acrossindex = i;
+		cw->wordsacross[acrossindex][cx - xstart] = ch;
+	}
+
+	if (downwordstart(cw->grid, cw->width, cw->height, cx, cy))
+		ystart = cy;
+	else if (cy > 0 && cw->grid[(cy - 1) * cw->width + cx] == 1)
+	{
+		ystart = cy - 1;
+		while (!downwordstart(cw->grid, cw->width, cw->height, cx, ystart))
+		{
+			ystart--;
+			if (ystart < 0)
+				break;
+		}
+	}
+	
+	if (ystart != -1)
+	{
+		downnumber = cw->numbers[ystart * cw->width + cx];
+		assert(downnumber > 0);
+		for (i = 0; i < cw->Ndown; i++)
+			if (cw->numbersdown[i] == downnumber)
+				break;
+		assert(i < cw->Ndown);
+		downindex = i;
+		cw->wordsdown[downindex][cy - ystart] = ch;
+	}
+
+	return 0;
+}
+
 int crossword_setacrossclue(CROSSWORD *cw, int id, const char *clue)
 {
   int i, j;

@@ -88,7 +88,9 @@ static int recursivefill(CROSSWORD *cw, CWWORD *words, int difficulty, int (*cal
 	    free(oldconstraint);
 	    return 0;
 	  }
-	  words[index].N = --oldN;
+	  //words[index].N = --oldN;
+	  words[index].N = oldN - 1 < words[index].Ntot ? oldN - 1 : words[index].Ntot;
+	  oldN--;
 	  untryword(cw, words, index, oldconstraint, difficulty);
 	}
     free(oldconstraint);
@@ -339,7 +341,7 @@ static void setword(CROSSWORD *cw, char *word, int id)
 	  for(j=0;word[j];j++)
 	  {
 		ch = word[j] == '?' ? ' ' : word[j];
-	    crossword_setcell(cw, (i % cw->width) + j, i / cw->width, ch);
+	    crossword_setsolutioncell(cw, (i % cw->width) + j, i / cw->width, ch);
 	  }
   }
   else
@@ -350,7 +352,7 @@ static void setword(CROSSWORD *cw, char *word, int id)
 	  for(j=0;word[j];j++)
 	  {
 		ch = word[j] == '?' ? ' ' : word[j];
-	    crossword_setcell(cw, (i % cw->width), i / cw->width + j, ch);
+	    crossword_setsolutioncell(cw, (i % cw->width), i / cw->width + j, ch);
 	  }
   }
 }

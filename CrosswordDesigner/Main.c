@@ -7,6 +7,7 @@
 
 #include "crossword.h"
 #include "fillgrid.h"
+#include "wordmatcher.h"
 #include "crosswordhtml.h"
 #include "crosswordxpf.h"
 #include "crosswordpuz.h"
@@ -123,6 +124,10 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	RegisterAboutDialog(hInstance);
 	RegisterGenWordListDialog(hInstance);
 	RegisterWaitDialog(hInstance);
+
+	AllocConsole();
+	freopen("CONOUT$", "w", stdout);
+	printf("Hello console\n");
     
 
 	// Perform application initialization:
@@ -233,6 +238,11 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 	switch (message)
 	{
 	case WM_CREATE:
+	   if (wordmatcherinit() != 0)
+	   {
+		   MessageBox(hWnd, "Not enough memory", "Fatal error", MB_ICONERROR | MB_OK);
+		   exit(-1);
+	   }
 	   cw = createcrossword(9, 9);
 	   CreateControls(hWnd, cw);
 	   FillMenus(hWnd);

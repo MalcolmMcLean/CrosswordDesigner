@@ -37,6 +37,7 @@ CROSSWORD *createcrossword(int width, int height);
 CROSSWORD *crossword_clone(CROSSWORD *cw);
 void killcrossword(CROSSWORD *cw);
 int crossword_setcell(CROSSWORD *cw, int cx, int cy, char ch);
+int crossword_setsolutioncell(CROSSWORD* cw, int cx, int cy, char ch);
 int crossword_setacrossclue(CROSSWORD *cw, int id, const char *clue);
 int crossword_setdownclue(CROSSWORD *cw, int id, const char *clue);
 int crossword_resize(CROSSWORD* cw, int width, int height);
