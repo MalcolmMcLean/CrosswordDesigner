@@ -125,9 +125,10 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	RegisterGenWordListDialog(hInstance);
 	RegisterWaitDialog(hInstance);
 
-	AllocConsole();
-	freopen("CONOUT$", "w", stdout);
-	printf("Hello console\n");
+	// Comment in to get debug console
+	//AllocConsole();
+	//freopen("CONOUT$", "w", stdout);
+	//printf("Hello console\n");
     
 
 	// Perform application initialization:
