@@ -61,6 +61,40 @@ void RegisterClueWin(HINSTANCE hInstance)
   RegisterClassEx(&wndclass);
 }
 
+
+
+char* crossword_getcluestext(CROSSWORD* cw)
+{
+	char* answer = 0;
+	char* cluesacross = 0;
+	char* cluesdown = 0;
+	int buffsize = 0;
+
+	cluesacross = getacrosstext(cw);
+	if (!cluesacross)
+		goto error_exit;
+	cluesdown = getdowntext(cw);
+	if (!cluesdown)
+		goto error_exit;
+	buffsize = strlen(cluesacross) + strlen(cluesdown) + 256 + 1;
+	answer = malloc(buffsize);
+	if (!answer)
+		goto error_exit;
+	strcpy(answer, "Across:\n\n");
+	strcat(answer, cluesacross);
+	strcat(answer, "\nDown:\n\n");
+	strcat(answer, cluesdown);
+
+	free(cluesacross);
+	free(cluesdown);
+	return answer;
+error_exit:
+	free(cluesacross);
+	free(cluesdown);
+	free(answer);
+	return 0;
+}
+
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
   CLUEWIN *cluewin;
@@ -337,6 +371,8 @@ static char *getacrosstext(CROSSWORD *cw)
 	    N += strlen(cw->cluesacross[i]) + 10;
   }
   answer = malloc(N);
+  if (!answer)
+	  goto error_exit;
   ptr = answer;
   for(i=0;i<cw->Nacross;i++)
   {
@@ -366,6 +402,9 @@ static char *getacrosstext(CROSSWORD *cw)
   }
   ptr[0] = 0;
   return answer;
+error_exit:
+  free(answer);
+  return 0;
 }
 
 static char *getdowntext(CROSSWORD *cw)
@@ -384,6 +423,8 @@ static char *getdowntext(CROSSWORD *cw)
 	    N += strlen(cw->cluesdown[i]) + 10;
   }
   answer = malloc(N);
+  if (!answer)
+	  goto error_exit;
   ptr = answer;
   for(i=0;i<cw->Ndown;i++)
   {
@@ -413,6 +454,9 @@ static char *getdowntext(CROSSWORD *cw)
   }
   ptr[0] = 0;
   return answer;
+error_exit:
+  free(answer);
+  return 0;
 }
 
 static void trimbrackets(char *clue)

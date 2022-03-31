@@ -31,7 +31,7 @@ CROSSWORD *createcrossword(int width, int height)
   answer->wordsdown = 0;
   answer->numbersdown = 0;
   answer->cluesacross = 0;
-  answer->cluesdown =0;
+  answer->cluesdown = 0;
   answer->acrossclues_grid = 0;
   answer->downclues_grid = 0;
 
@@ -259,6 +259,8 @@ int crossword_setdownclue(CROSSWORD *cw, int id, const char *clue)
 	  {
 		  free(cw->downclues_grid[i]);
 		  cw->downclues_grid[i] = malloc(strlen(clue) + 1);
+		  if (!cw->downclues_grid[i])
+			  goto out_of_memory;
 		  strcpy(cw->downclues_grid[i], clue);
 		  for(j=0;j<cw->Ndown;j++)
 			  if(cw->numbersdown[j] == id)

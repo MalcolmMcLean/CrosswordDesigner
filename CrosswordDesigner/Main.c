@@ -53,16 +53,18 @@
 #define ID_RESIZE_MNU 106
 #define ID_COPY_PUZZLE_MNU 107
 #define ID_COPY_SOLUTION_MNU 108
-#define ID_SETTINGS_MNU 109
-#define ID_WORDMATCHER_MNU 110
-#define ID_ANAGRAMFINDER_MNU 111
-#define ID_FILLGRID_MNU 112
-#define ID_GENFROMLIST_MNU 113
-#define ID_STARTGRID_MNU 114
-#define ID_RNDAMERICANGRID_MNU 115
-#define ID_HELP_MNU 116
-#define ID_ABOUT_MNU 117
-#define ID_UNDO_MNU 118
+#define ID_COPY_SOLUTIONTXT_MNU 109
+#define ID_COPY_CLUES_MNU 110
+#define ID_SETTINGS_MNU 111
+#define ID_WORDMATCHER_MNU 112
+#define ID_ANAGRAMFINDER_MNU 113
+#define ID_FILLGRID_MNU 114
+#define ID_GENFROMLIST_MNU 115
+#define ID_STARTGRID_MNU 116
+#define ID_RNDAMERICANGRID_MNU 117
+#define ID_HELP_MNU 118
+#define ID_ABOUT_MNU 119
+#define ID_UNDO_MNU 120
 
 HINSTANCE hInst;
 CROSSWORD *cw;
@@ -83,6 +85,8 @@ static void ExportAsInteractiveHTML(HWND hwnd);
 static void EditSettings(HWND hwnd);
 static void SetSize(HWND hwnd);
 static void SetPuzzleSize(HWND hwnd, int width, int height);
+static void CopyClues(HWND hwnd);
+static void CopySolutionAsText(HWND hwnd);
 static void CopyPuzzleGrid(HWND hwnd);
 static void CopySolutionGrid(HWND hwnd);
 static void GenFromWordList(HWND hwnd);
@@ -90,6 +94,7 @@ static void RepopulateListBoxes(HWND hwnd);
 static void EnableUndo(void *ptr);
 static void DisableUndo(void *ptr);
 static int FillGridCallback(void *ptr);
+static char* crossword_getsolution_toprint(CROSSWORD* cwd);
 static int setcrosswordtorandomamerican(CROSSWORD* cwd);
 static int settings_changed(CROSSWORD* cwd, SETTINGS* set);
 static int mystrcmpx(const char *stra, const char* strb);
@@ -290,6 +295,12 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case ID_COPY_SOLUTION_MNU:
 			CopySolutionGrid(hWnd);
+			break;
+		case ID_COPY_SOLUTIONTXT_MNU:
+			CopySolutionAsText(hWnd);
+			break;
+		case ID_COPY_CLUES_MNU:
+			CopyClues(hWnd);
 			break;
 		case ID_WORDMATCHER_MNU:
 			OpenWordMatcherDialog(hWnd);
@@ -538,6 +549,7 @@ static void FillMenus(HWND hwnd)
   HMENU editmenu;
   HMENU aboutmenu;
   HMENU randomgridmenu;
+  HMENU clipboardmenu;
 
   filemenu = CreateMenu();
   AppendMenu(filemenu, MF_STRING, ID_LOAD_MNU, "Open...");
@@ -551,14 +563,19 @@ static void FillMenus(HWND hwnd)
   AppendMenu(randomgridmenu, MF_STRING, ID_STARTGRID_MNU, "English-style");
   AppendMenu(randomgridmenu, MF_STRING, ID_RNDAMERICANGRID_MNU, "American-style");
 
+  clipboardmenu = CreateMenu();
+  AppendMenu(clipboardmenu, MF_STRING, ID_COPY_PUZZLE_MNU, "Copy puzzle grid");
+  AppendMenu(clipboardmenu, MF_STRING, ID_COPY_SOLUTION_MNU, "Copy solution grid");
+  AppendMenu(clipboardmenu, MF_STRING, ID_COPY_SOLUTIONTXT_MNU, "Copy solution (as text)");
+  AppendMenu(clipboardmenu, MF_STRING, ID_COPY_CLUES_MNU, "Copy clues");
+
+
   editmenu = CreateMenu();
   AppendMenu(editmenu, MF_STRING, ID_UNDO_MNU, "Undo");
   AppendMenu(editmenu, MF_STRING, ID_RESIZE_MNU, "Set size...");
-  //AppendMenu(editmenu, MF_STRING, ID_STARTGRID_MNU, "Starter grid");
   AppendMenu(editmenu, MF_STRING | MF_POPUP, (UINT_PTR)randomgridmenu, "Starter grid");
   AppendMenu(editmenu, MF_STRING, ID_SETTINGS_MNU, "Settings...");
-  AppendMenu(editmenu, MF_STRING, ID_COPY_PUZZLE_MNU, "Copy puzzle grid");
-  AppendMenu(editmenu, MF_STRING, ID_COPY_SOLUTION_MNU, "Copy solution grid");
+  AppendMenu(editmenu, MF_STRING | MF_POPUP, (UINT_PTR)clipboardmenu, "Copy to clipboard");
   AppendMenu(editmenu, MF_STRING, ID_WORDMATCHER_MNU, "Word matcher...");
   AppendMenu(editmenu, MF_STRING, ID_ANAGRAMFINDER_MNU, "Anagram finder...");
   AppendMenu(editmenu, MF_STRING, ID_FILLGRID_MNU, "Fill grid");
@@ -797,6 +814,78 @@ static void RepopulateListBoxes(HWND hwnd)
 	  
 }
 
+static void CopyClues(HWND hwnd)
+{
+	HGLOBAL hGlobal = 0;
+	char* clues = 0;
+	char* lock = 0;
+
+	clues = crossword_getcluestext(cw);
+	if (!clues)
+		goto error_exit;
+	hGlobal = GlobalAlloc(GMEM_MOVEABLE, strlen(clues) + 1);
+	if (!hGlobal)
+		goto error_exit;
+	lock = GlobalLock(hGlobal);
+	if (!lock)
+		goto error_exit;
+	
+	strcpy(lock, clues);
+	GlobalUnlock(lock);
+
+	if (OpenClipboard(hwnd))
+	{
+		EmptyClipboard();
+		SetClipboardData(CF_TEXT, lock);
+		CloseClipboard();
+	}
+	else
+		goto error_exit;
+	free(clues);
+	return;
+error_exit:
+	if (hGlobal)
+		GlobalFree(hGlobal);
+	free(clues);
+	MessageBox(hwnd, "There was an error copying your clues to the clipboard", "Windows error", MB_OK);
+}
+
+static void CopySolutionAsText(HWND hwnd)
+{
+	HGLOBAL hGlobal = 0;
+	char* solutiontxt = 0;
+	char* lock = 0;
+
+	solutiontxt = crossword_getsolution_toprint(cw);
+	printf("%s", solutiontxt);
+	if (!solutiontxt)
+		goto error_exit;
+	hGlobal = GlobalAlloc(GMEM_MOVEABLE, strlen(solutiontxt) + 1);
+	if (!hGlobal)
+		goto error_exit;
+	lock = GlobalLock(hGlobal);
+	if (!lock)
+		goto error_exit;
+
+	strcpy(lock, solutiontxt);
+	GlobalUnlock(lock);
+
+	if (OpenClipboard(hwnd))
+	{
+		EmptyClipboard();
+		SetClipboardData(CF_TEXT, lock);
+		CloseClipboard();
+	}
+	else
+		goto error_exit;
+	free(solutiontxt);
+	return;
+error_exit:
+	if (hGlobal)
+		GlobalFree(hGlobal);
+	free(solutiontxt);
+	MessageBox(hwnd, "There was an error copying your solution to the clipboard", "Windows error", MB_OK);
+}
 static void CopyPuzzleGrid(HWND hwnd)
 {
   int bmwidth = cw->width * 24;
@@ -913,6 +1002,29 @@ static int FillGridCallback(void *ptr)
 	WAITDIALOG *wd = ptr;
 	WaitDialog_Tick(wd);
 	return wd->stopped;
+}
+
+static char* crossword_getsolution_toprint(CROSSWORD* cwd)
+{
+	int x, y;
+	int index = 0;
+	char* answer = malloc(cwd->width * cwd->height + cwd->height + 1);
+	if (!answer)
+		goto error_exit;
+	for (y = 0; y < cwd->height; y++)
+	{
+		for (x = 0; x < cwd->width; x++)
+			answer[index++] = cwd->grid[y * cwd->width + x] ? cwd->solution[y * cwd->width + x] : '#';
+		answer[index++] = '\n';
+
+	}
+	answer[index++] = 0;
+
+	return answer;
+	
+error_exit:
+	free(answer);
+	return 0;
 }
 
 static int setcrosswordtorandomamerican(CROSSWORD* cwd)

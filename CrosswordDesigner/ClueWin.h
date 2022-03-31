@@ -5,5 +5,6 @@
 #define CW_SETCROSSWORD (WM_USER + 11)
 
 void RegisterClueWin(HINSTANCE hInstance);
+char* crossword_getcluestext(CROSSWORD* cw);
 
 #endif
