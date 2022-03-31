@@ -8,6 +8,7 @@
 #include "crossword.h"
 #include "fillgrid.h"
 #include "wordmatcher.h"
+#include "blankgrids.h"
 #include "crosswordhtml.h"
 #include "crosswordxpf.h"
 #include "crosswordpuz.h"
@@ -58,9 +59,10 @@
 #define ID_FILLGRID_MNU 112
 #define ID_GENFROMLIST_MNU 113
 #define ID_STARTGRID_MNU 114
-#define ID_HELP_MNU 115
-#define ID_ABOUT_MNU 116
-#define ID_UNDO_MNU 117
+#define ID_RNDAMERICANGRID_MNU 115
+#define ID_HELP_MNU 116
+#define ID_ABOUT_MNU 117
+#define ID_UNDO_MNU 118
 
 HINSTANCE hInst;
 CROSSWORD *cw;
@@ -88,6 +90,7 @@ static void RepopulateListBoxes(HWND hwnd);
 static void EnableUndo(void *ptr);
 static void DisableUndo(void *ptr);
 static int FillGridCallback(void *ptr);
+static int setcrosswordtorandomamerican(CROSSWORD* cwd);
 static int settings_changed(CROSSWORD* cwd, SETTINGS* set);
 static int mystrcmpx(const char *stra, const char* strb);
 static int extensionequals(char *fname, char *ext);
@@ -314,6 +317,15 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 		    SendMessage(GetDlgItem(hWnd, ID_CLUEWIN), CW_SETCROSSWORD, 0, (LPARAM) cw);
 		    RepopulateListBoxes(hWnd);
 			break;
+		case ID_RNDAMERICANGRID_MNU:
+			undo_push(cw);
+			if (cw->width != 15 || cw->height != 15)
+				SetPuzzleSize(hWnd, 15, 15);
+			setcrosswordtorandomamerican(cw);
+			SendMessage(GetDlgItem(hWnd, ID_GRIDWIN), GW_SETCROSSWORD, 0, (LPARAM)cw);
+			SendMessage(GetDlgItem(hWnd, ID_CLUEWIN), CW_SETCROSSWORD, 0, (LPARAM)cw);
+			RepopulateListBoxes(hWnd);
+			break;
 		case ID_HELP_MNU:
 			OpenHelpDialog(hWnd);
 			break;
@@ -525,6 +537,7 @@ static void FillMenus(HWND hwnd)
   HMENU filemenu;
   HMENU editmenu;
   HMENU aboutmenu;
+  HMENU randomgridmenu;
 
   filemenu = CreateMenu();
   AppendMenu(filemenu, MF_STRING, ID_LOAD_MNU, "Open...");
@@ -533,10 +546,16 @@ static void FillMenus(HWND hwnd)
   AppendMenu(filemenu, MF_STRING, ID_HTML_MNU, "Export as HTML...");
   AppendMenu(filemenu, MF_STRING, ID_HTML_INTERACTIVE_MNU, "Export as interactive HTML...");
 
+
+  randomgridmenu = CreateMenu();
+  AppendMenu(randomgridmenu, MF_STRING, ID_STARTGRID_MNU, "English-style");
+  AppendMenu(randomgridmenu, MF_STRING, ID_RNDAMERICANGRID_MNU, "American-style");
+
   editmenu = CreateMenu();
   AppendMenu(editmenu, MF_STRING, ID_UNDO_MNU, "Undo");
   AppendMenu(editmenu, MF_STRING, ID_RESIZE_MNU, "Set size...");
-  AppendMenu(editmenu, MF_STRING, ID_STARTGRID_MNU, "Starter grid");
+  //AppendMenu(editmenu, MF_STRING, ID_STARTGRID_MNU, "Starter grid");
+  AppendMenu(editmenu, MF_STRING | MF_POPUP, (UINT_PTR)randomgridmenu, "Starter grid");
   AppendMenu(editmenu, MF_STRING, ID_SETTINGS_MNU, "Settings...");
   AppendMenu(editmenu, MF_STRING, ID_COPY_PUZZLE_MNU, "Copy puzzle grid");
   AppendMenu(editmenu, MF_STRING, ID_COPY_SOLUTION_MNU, "Copy solution grid");
@@ -894,6 +913,23 @@ static int FillGridCallback(void *ptr)
 	WAITDIALOG *wd = ptr;
 	WaitDialog_Tick(wd);
 	return wd->stopped;
+}
+
+static int setcrosswordtorandomamerican(CROSSWORD* cwd)
+{
+	int width, height;
+	char* grid;
+	int x, y;
+
+	grid = randomamericanblankgrid(&width, &height);
+	if (!grid)
+		return - 1;
+	for (y = 0; y < height; y++)
+		for (x = 0; x < width; x++)
+			crossword_setcell(cwd, x, y, grid[y * width + x] == '#' ? 0 : ' ');
+	free(grid);
+
+	return 0;
 }
 
 static int settings_changed(CROSSWORD *cwd, SETTINGS *set)

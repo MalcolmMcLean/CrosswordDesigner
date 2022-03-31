@@ -228,6 +228,8 @@ int crossword_setacrossclue(CROSSWORD *cw, int id, const char *clue)
 	  {
 		  free(cw->acrossclues_grid[i]);
 		  cw->acrossclues_grid[i] = malloc(strlen(clue) + 1);
+		  if (!cw->acrossclues_grid[i])
+			  goto out_of_memory;
 		  strcpy(cw->acrossclues_grid[i], clue);
 		  for(j=0;j<cw->Nacross;j++)
 			  if(cw->numbersacross[j] == id)
@@ -372,6 +374,7 @@ void crossword_startgrid(CROSSWORD *cw)
   for(i=0;i<cw->height;i++)
     for(ii=0;ii<cw->width;ii++)
 	{
+	  crossword_setcell(cw, ii, i, 0);
 	  if( (i % 2) == 0 || (ii % 2) == 0)
 	  {
 	    if(cw->grid[i*cw->width+ii] == 0)
