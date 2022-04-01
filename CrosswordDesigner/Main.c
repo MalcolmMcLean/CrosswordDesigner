@@ -65,6 +65,7 @@
 #define ID_HELP_MNU 118
 #define ID_ABOUT_MNU 119
 #define ID_UNDO_MNU 120
+#define ID_REDO_MNU 121
 
 HINSTANCE hInst;
 CROSSWORD *cw;
@@ -79,6 +80,7 @@ static void FillMenus(HWND hwnd);
 static int GetDifficulty(HWND hwnd);
 static void Load(HWND hwnd);
 static void Undo(HWND hwnd);
+static void Redo(HWND hwnd);
 static void Save(HWND hwnd);
 static void ExportAsHTML(HWND hwnd);
 static void ExportAsInteractiveHTML(HWND hwnd);
@@ -91,8 +93,7 @@ static void CopyPuzzleGrid(HWND hwnd);
 static void CopySolutionGrid(HWND hwnd);
 static void GenFromWordList(HWND hwnd);
 static void RepopulateListBoxes(HWND hwnd);
-static void EnableUndo(void *ptr);
-static void DisableUndo(void *ptr);
+static void EnableUndo(void *ptr, int enableundo, int enableredo);
 static int FillGridCallback(void *ptr);
 static char* crossword_getsolution_toprint(CROSSWORD* cwd);
 static int setcrosswordtorandomamerican(CROSSWORD* cwd);
@@ -259,7 +260,7 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 	   SetPuzzleSize(hWnd, 15, 15);
 	   hwndptr = malloc(sizeof(HWND));
 	   hwndptr[0] = hWnd;
-	   undo_init(EnableUndo, DisableUndo, hwndptr);
+	   undo_init(EnableUndo, hwndptr);
 	   break;
 	case WM_COMMAND:
 		wmId    = LOWORD(wParam);
@@ -349,6 +350,9 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 		    break;
 		case ID_UNDO_MNU:
 			Undo(hWnd);
+			break;
+		case ID_REDO_MNU:
+			Redo(hWnd);
 			break;
 		default:
 			return DefWindowProc(hWnd, message, wParam, lParam);
@@ -572,6 +576,7 @@ static void FillMenus(HWND hwnd)
 
   editmenu = CreateMenu();
   AppendMenu(editmenu, MF_STRING, ID_UNDO_MNU, "Undo");
+  AppendMenu(editmenu, MF_STRING, ID_REDO_MNU, "Redo");
   AppendMenu(editmenu, MF_STRING, ID_RESIZE_MNU, "Set size...");
   AppendMenu(editmenu, MF_STRING | MF_POPUP, (UINT_PTR)randomgridmenu, "Starter grid");
   AppendMenu(editmenu, MF_STRING, ID_SETTINGS_MNU, "Settings...");
@@ -659,7 +664,7 @@ static void Undo(HWND hwnd)
 {
 	CROSSWORD *tempcw;
 
-	tempcw = undo_pop();
+	tempcw = undo_pop(cw);
 	if (!tempcw)
 		return;
 	killcrossword(cw);
@@ -669,6 +674,22 @@ static void Undo(HWND hwnd)
 	SendMessage(GetDlgItem(hwnd, ID_CLUEWIN), CW_SETCROSSWORD, 0, (LPARAM)cw);
 	RepopulateListBoxes(hwnd);
 	
+}
+
+static void Redo(HWND hwnd)
+{
+	CROSSWORD* tempcw;
+
+	tempcw = undo_redo();
+	if (!tempcw)
+		return;
+	killcrossword(cw);
+	cw = tempcw;
+	SetPuzzleSize(hwnd, cw->width, cw->height);
+	SendMessage(GetDlgItem(hwnd, ID_GRIDWIN), GW_SETCROSSWORD, 0, (LPARAM)cw);
+	SendMessage(GetDlgItem(hwnd, ID_CLUEWIN), CW_SETCROSSWORD, 0, (LPARAM)cw);
+	RepopulateListBoxes(hwnd);
+
 }
 
 static void Save(HWND hwnd)
@@ -977,25 +998,25 @@ static void GenFromWordList(HWND hwnd)
   free(fname);
 }
 
-static void EnableUndo(void *ptr)
+static void EnableUndo(void *ptr, int enableundo, int enableredo)
 {
 	HWND hwnd;
 	HMENU hmenu;
 
 	hwnd = *(HWND*)ptr;
 	hmenu = GetMenu(hwnd);
-	EnableMenuItem(hmenu, ID_UNDO_MNU, MFS_ENABLED);
+	if (enableundo)
+		EnableMenuItem(hmenu, ID_UNDO_MNU, MFS_ENABLED);
+	else
+		EnableMenuItem(hmenu, ID_UNDO_MNU, MFS_GRAYED);
+
+	if (enableredo)
+		EnableMenuItem(hmenu, ID_REDO_MNU, MFS_ENABLED);
+	else
+		EnableMenuItem(hmenu, ID_REDO_MNU, MFS_GRAYED);
+
 }
 
-static void DisableUndo(void *ptr)
-{
-	HWND hwnd;
-	HMENU hmenu;
-
-	hwnd = *(HWND*)ptr;
-	hmenu = GetMenu(hwnd);
-	EnableMenuItem(hmenu, ID_UNDO_MNU, MFS_GRAYED);
-}
 
 static int FillGridCallback(void *ptr)
 {
