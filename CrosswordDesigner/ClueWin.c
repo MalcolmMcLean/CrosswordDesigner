@@ -22,6 +22,23 @@ typedef struct
 
 typedef struct
 {
+  HWND hwnd;
+  CLUE clue;
+  HWND hnumber_txt;
+  HWND hword_txt;
+  HWND hclue_edt;
+  RECT rect;
+} CLUEENTRY;
+
+typedef struct
+{
+	HWND hwnd;
+	CLUEENTRY* entries;
+	int Nentries;
+} CLUELIST;
+
+typedef struct
+{
   CROSSWORD *cw;
   HWND across_edt;
   HWND down_edt;
@@ -40,6 +57,8 @@ static char *getacrosstext(CROSSWORD *cw);
 static char *getdowntext(CROSSWORD *cw);
 static void trimbrackets(char *clue);
 static void trim(char *str);
+
+
 
 void RegisterClueWin(HINSTANCE hInstance)
 {
@@ -61,6 +80,65 @@ void RegisterClueWin(HINSTANCE hInstance)
   RegisterClassEx(&wndclass);
 }
 
+static void RegisterClueList(HINSTANCE hInstance)
+{
+	WNDCLASSEX wndclass;
+
+	wndclass.cbSize = sizeof(WNDCLASSEX);
+	wndclass.style = CS_HREDRAW | CS_VREDRAW;
+	wndclass.lpfnWndProc = WndProc;
+	wndclass.cbClsExtra = 0;
+	wndclass.cbWndExtra = 0;
+	wndclass.hInstance = hInstance;
+	wndclass.hIcon = LoadIcon(0, IDI_APPLICATION); //LoadIcon(hInstance, MAKEINTRESOURCE(IDI_HEART));
+	wndclass.hCursor = LoadCursor(NULL, IDC_ARROW);
+	wndclass.hbrBackground = CreateSolidBrush(RGB(0, 255, 0));// (HBRUSH) (COLOR_MENU + 1);
+	wndclass.lpszMenuName = 0;
+	wndclass.lpszClassName = "cluelist";
+	wndclass.hIconSm = LoadIcon(0, IDI_APPLICATION); //LoadIcon(hInstance, MAKEINTRESOURCE(IDI_HEART));
+
+	RegisterClassEx(&wndclass);
+}
+
+static void RegisterClueEntry(HINSTANCE hInstance)
+{
+	WNDCLASSEX wndclass;
+
+	wndclass.cbSize = sizeof(WNDCLASSEX);
+	wndclass.style = CS_HREDRAW | CS_VREDRAW;
+	wndclass.lpfnWndProc = WndProc;
+	wndclass.cbClsExtra = 0;
+	wndclass.cbWndExtra = 0;
+	wndclass.hInstance = hInstance;
+	wndclass.hIcon = LoadIcon(0, IDI_APPLICATION); //LoadIcon(hInstance, MAKEINTRESOURCE(IDI_HEART));
+	wndclass.hCursor = LoadCursor(NULL, IDC_ARROW);
+	wndclass.hbrBackground = CreateSolidBrush(RGB(0, 255, 0));// (HBRUSH) (COLOR_MENU + 1);
+	wndclass.lpszMenuName = 0;
+	wndclass.lpszClassName = "clueentry";
+	wndclass.hIconSm = LoadIcon(0, IDI_APPLICATION); //LoadIcon(hInstance, MAKEINTRESOURCE(IDI_HEART));
+
+	RegisterClassEx(&wndclass);
+}
+
+static void RegisterClueList(HINSTANCE hInstance)
+{
+	WNDCLASSEX wndclass;
+
+	wndclass.cbSize = sizeof(WNDCLASSEX);
+	wndclass.style = CS_HREDRAW | CS_VREDRAW;
+	wndclass.lpfnWndProc = WndProc;
+	wndclass.cbClsExtra = 0;
+	wndclass.cbWndExtra = 0;
+	wndclass.hInstance = hInstance;
+	wndclass.hIcon = LoadIcon(0, IDI_APPLICATION); //LoadIcon(hInstance, MAKEINTRESOURCE(IDI_HEART));
+	wndclass.hCursor = LoadCursor(NULL, IDC_ARROW);
+	wndclass.hbrBackground = CreateSolidBrush(RGB(0, 255, 0));// (HBRUSH) (COLOR_MENU + 1);
+	wndclass.lpszMenuName = 0;
+	wndclass.lpszClassName = "cluelist";
+	wndclass.hIconSm = LoadIcon(0, IDI_APPLICATION); //LoadIcon(hInstance, MAKEINTRESOURCE(IDI_HEART));
+
+	RegisterClassEx(&wndclass);
+}
 
 
 char* crossword_getcluestext(CROSSWORD* cw)
@@ -185,7 +263,7 @@ static void CreateControls(HWND hwnd, CLUEWIN *cluewin)
 
   cluewin->across_edt = CreateWindowEx( 
 	  0,
-	  "edit",
+	  "cluelist",
 	  "",
 	  WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL,
 	  0,
@@ -198,7 +276,7 @@ static void CreateControls(HWND hwnd, CLUEWIN *cluewin)
 	  0);
    cluewin->down_edt = CreateWindowEx(
 	  0,
-	  "edit",
+	  "cluelist",
 	  "",
 	  WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL,
 	  rect.right/2,
@@ -209,6 +287,109 @@ static void CreateControls(HWND hwnd, CLUEWIN *cluewin)
 	  (HMENU) ID_DOWN_EDT,
 	  (HINSTANCE) GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
 	  0);
+}
+
+static LRESULT CALLBACK ClueListWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	CLUEWIN* cluewin;
+	int id;
+	int event;
+
+	cluewin = (CLUEWIN*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+	switch (msg)
+	{
+	case WM_CREATE:
+		cluewin = (CLUEWIN *)((CREATESTRUCT*)lParam)->lpCreateParams;
+		SetWindowLongPtr(hwnd, GWLP_USERDATA, (LPARAM)cluewin);
+		CreateListControls(hwnd, cluewin);
+		return 0;
+	case WM_COMMAND:
+		id = LOWORD(wParam);
+		event = HIWORD(wParam);
+		/*
+		switch (id)
+		{
+		case ID_ACROSS_EDT:
+			if (event == EN_KILLFOCUS)
+				ParseAcrossClues(hwnd, cluewin);
+			break;
+		case ID_DOWN_EDT:
+			if (event == EN_KILLFOCUS)
+				ParseDownClues(hwnd, cluewin);
+			break;
+		}
+		*/
+		break;
+	case CW_SETCROSSWORD:
+		//cluewin->cw = (CROSSWORD*)lParam;
+		//SendMessage(hwnd, CW_REFRESH, 0, 0);
+		break;
+	case CW_REFRESH:
+		//str = getacrosstext(cluewin->cw);
+		//SetWindowText(GetDlgItem(hwnd, ID_ACROSS_EDT), str);
+		//free(str);
+		//str = getdowntext(cluewin->cw);
+		//SetWindowText(GetDlgItem(hwnd, ID_DOWN_EDT), str);
+		//free(str);
+		break;
+	case WM_DESTROY:
+		//free(cluewin);
+		return 0;
+	}
+	return DefWindowProc(hwnd, msg, wParam, lParam);
+
+}
+
+static LRESULT CALLBACK ClueEntryWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	CLUEENTRY* clueentry;
+	int id;
+	int event;
+
+	clueentry = (CLUEENTRY*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+	switch (msg)
+	{
+	case WM_CREATE:
+		clueentry = malloc(sizeof(CLUEENTRY));
+		//cluewin = (CLUEWIN*)((CREATESTRUCT*)lParam)->lpCreateParams;
+		SetWindowLongPtr(hwnd, GWLP_USERDATA, (LPARAM)clueentry);
+		CreateEntryControls(hwnd, clueentry);
+		return 0;
+	case WM_COMMAND:
+		id = LOWORD(wParam);
+		event = HIWORD(wParam);
+		/*
+		switch (id)
+		{
+		case ID_ACROSS_EDT:
+			if (event == EN_KILLFOCUS)
+				ParseAcrossClues(hwnd, cluewin);
+			break;
+		case ID_DOWN_EDT:
+			if (event == EN_KILLFOCUS)
+				ParseDownClues(hwnd, cluewin);
+			break;
+		}
+		*/
+		break;
+	case CW_SETCROSSWORD:
+		//cluewin->cw = (CROSSWORD*)lParam;
+		//SendMessage(hwnd, CW_REFRESH, 0, 0);
+		break;
+	case CW_REFRESH:
+		//str = getacrosstext(cluewin->cw);
+		//SetWindowText(GetDlgItem(hwnd, ID_ACROSS_EDT), str);
+		//free(str);
+		//str = getdowntext(cluewin->cw);
+		//SetWindowText(GetDlgItem(hwnd, ID_DOWN_EDT), str);
+		//free(str);
+		break;
+	case WM_DESTROY:
+		free(clueentry);
+		return 0;
+	}
+	return DefWindowProc(hwnd, msg, wParam, lParam);
+
 }
 
 static void ParseAcrossClues(HWND hwnd, CLUEWIN *cluewin)
