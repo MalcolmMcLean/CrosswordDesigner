@@ -34,6 +34,8 @@ CROSSWORD *createcrossword(int width, int height)
   answer->cluesdown = 0;
   answer->acrossclues_grid = 0;
   answer->downclues_grid = 0;
+  answer->Nacross = 0;
+  answer->Ndown = 0;
 
   answer->title = 0;
   answer->author = 0;

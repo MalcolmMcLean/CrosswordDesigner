@@ -18,6 +18,7 @@ typedef struct
   HFONT hsmallfont;
   int xpos;
   int ypos;
+  int hasfocus;
 } GRIDWIN;
 
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -76,6 +77,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 	  gw->hsmallfont = CreateFont(8, 5, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
 		OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
 		DEFAULT_PITCH | FF_DONTCARE, "Arial");
+	  gw->hasfocus = 0;
 	  DoScrollBars(hwnd, gw);
 	  return 0;
 	case WM_DESTROY:
@@ -130,6 +132,17 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 	  InvalidateRect(hwnd, 0, TRUE);
 	  UpdateWindow(hwnd);
 	  break;
+	case WM_SETFOCUS:
+		gw->hasfocus = 1;
+		InvalidateRect(hwnd, 0, TRUE);
+		UpdateWindow(hwnd);
+		break;
+	case WM_KILLFOCUS:
+		gw->hasfocus = 0;
+		InvalidateRect(hwnd, 0, TRUE);
+		UpdateWindow(hwnd);
+		break;
+
   }
 
   return DefWindowProc(hwnd, msg, wParam, lParam);
@@ -237,7 +250,7 @@ static void PaintMe(HWND hwnd, GRIDWIN *gw)
 		if(gw->cw->numbers[i*gw->cw->width+ii] != 0)
 		{
 		  sprintf(str, "%d", gw->cw->numbers[i*gw->cw->width+ii]);
-		  TextOut(hdc, rect.left, rect.top+2, str, strlen(str));
+		  TextOut(hdc, rect.left+1, rect.top+2, str, strlen(str));
 		}
 	}
 
@@ -264,7 +277,7 @@ static void PaintMe(HWND hwnd, GRIDWIN *gw)
  
 
 
-  if(gw->selx >= 0 && gw->sely >= 0)
+  if(gw->hasfocus && gw->selx >= 0 && gw->sely >= 0)
   {
      CellToRect(gw, &rect, gw->selx, gw->sely);
 	 SelectObject(hdc, GetStockObject(HOLLOW_BRUSH));

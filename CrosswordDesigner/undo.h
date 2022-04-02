@@ -6,5 +6,6 @@ void undo_push(CROSSWORD *cw);
 CROSSWORD *undo_pop(CROSSWORD *cw);
 CROSSWORD* undo_redo(void);
 int undo_hasundos(void);
+int undo_hasredos(void);
 
 #endif
