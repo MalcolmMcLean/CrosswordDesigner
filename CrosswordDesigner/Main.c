@@ -36,14 +36,12 @@
 #define ID_GRIDWIN 10
 #define ID_NACROSS_TXT 11
 #define ID_NDOWN_TXT 12
-#define ID_ACROSSWORDS_LB 13
-#define ID_DOWNWORDS_LB 14
-#define ID_CLUEWIN 15
-#define ID_LEVEL_GRP 17
-#define ID_LEVEL0_RAD 18
-#define ID_LEVEL1_RAD 19
-#define ID_LEVEL2_RAD 20
-#define ID_LEVEL3_RAD 21
+#define ID_CLUEWIN 13
+#define ID_LEVEL_GRP 15
+#define ID_LEVEL0_RAD 16
+#define ID_LEVEL1_RAD 17
+#define ID_LEVEL2_RAD 18
+#define ID_LEVEL3_RAD 19
 
 #define ID_LOAD_MNU 101
 #define ID_SAVE_MNU 102
@@ -67,9 +65,12 @@
 #define ID_UNDO_MNU 120
 
 HINSTANCE hInst;
+HFONT g_hcaptionfont;
+HFONT g_hinputfont;
 CROSSWORD *cw;
 SETTINGS settings = { 0, };
 int g_difficulty = 0;
+
 
 static ATOM MyRegisterClass(HINSTANCE hInstance);
 static BOOL InitInstance(HINSTANCE hInstance, int nCmdShow);
@@ -90,7 +91,6 @@ static void CopySolutionAsText(HWND hwnd);
 static void CopyPuzzleGrid(HWND hwnd);
 static void CopySolutionGrid(HWND hwnd);
 static void GenFromWordList(HWND hwnd);
-static void RepopulateListBoxes(HWND hwnd);
 static void EnableUndo(void *ptr);
 static void DisableUndo(void *ptr);
 static int FillGridCallback(void *ptr);
@@ -109,7 +109,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 {
 	//UNREFERENCED_PARAMETER(hPrevInstance);
 	//UNREFERENCED_PARAMETER(lpCmdLine);
-
+	NONCLIENTMETRICS metrics;
  	// TODO: Place code here.
 	MSG msg;
 	//HACCEL hAccelTable;
@@ -137,6 +137,11 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	//AllocConsole();
 	//freopen("CONOUT$", "w", stdout);
 	//printf("Hello console\n");
+
+	metrics.cbSize = sizeof(NONCLIENTMETRICS);
+	SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS), &metrics, 0);
+	g_hinputfont = CreateFontIndirect(&metrics.lfMessageFont);
+	g_hcaptionfont = CreateFontIndirect(&metrics.lfCaptionFont);
     
 
 	// Perform application initialization:
@@ -315,7 +320,6 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			KillWaitDialog(wd);
 			SendMessage(GetDlgItem(hWnd, ID_GRIDWIN), GW_SETCROSSWORD, 0, (LPARAM) cw);
 		    SendMessage(GetDlgItem(hWnd, ID_CLUEWIN), CW_SETCROSSWORD, 0, (LPARAM) cw);
-		    RepopulateListBoxes(hWnd);
 			break;
 		case ID_GENFROMLIST_MNU:
 			undo_push(cw);
@@ -326,7 +330,6 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
             crossword_randgrid(cw);
 			SendMessage(GetDlgItem(hWnd, ID_GRIDWIN), GW_SETCROSSWORD, 0, (LPARAM) cw);
 		    SendMessage(GetDlgItem(hWnd, ID_CLUEWIN), CW_SETCROSSWORD, 0, (LPARAM) cw);
-		    RepopulateListBoxes(hWnd);
 			break;
 		case ID_RNDAMERICANGRID_MNU:
 			undo_push(cw);
@@ -335,7 +338,6 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			setcrosswordtorandomamerican(cw);
 			SendMessage(GetDlgItem(hWnd, ID_GRIDWIN), GW_SETCROSSWORD, 0, (LPARAM)cw);
 			SendMessage(GetDlgItem(hWnd, ID_CLUEWIN), CW_SETCROSSWORD, 0, (LPARAM)cw);
-			RepopulateListBoxes(hWnd);
 			break;
 		case ID_HELP_MNU:
 			OpenHelpDialog(hWnd);
@@ -344,7 +346,6 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			OpenAboutDialog(hWnd);
 			break;
 		case ID_GRIDWIN:
-			RepopulateListBoxes(hWnd);
 			SendMessage(GetDlgItem(hWnd, ID_CLUEWIN), CW_REFRESH, 0, 0);
 		    break;
 		case ID_UNDO_MNU:
@@ -397,48 +398,15 @@ static void CreateControls(HWND hwnd, CROSSWORD *cw)
   assert(hctl);
   ShowWindow(hctl, SW_SHOWNORMAL);
 
-  
-    hctl = CreateWindowEx(
-	  WS_EX_RIGHTSCROLLBAR,
-	  "listbox",
-	  "",
-	  WS_CHILD | WS_VSCROLL,
-	  40,
-	  425,
-	  200,
-	  305,
-	  hwnd,
-	  (HMENU) ID_ACROSSWORDS_LB,
-	  (HINSTANCE) GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
-	  cw);
-  assert(hctl);
-  ShowWindow(hctl, SW_SHOWNORMAL);
-
-    hctl = CreateWindowEx(
-	  WS_EX_RIGHTSCROLLBAR,
-	  "listbox",
-	  "",
-	  WS_CHILD | WS_VSCROLL,
-	  240,
-	  425,
-	  190,
-	  305,
-	  hwnd,
-	  (HMENU) ID_DOWNWORDS_LB,
-	  (HINSTANCE) GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
-	  cw);
-  assert(hctl);
-  ShowWindow(hctl, SW_SHOWNORMAL);
-
    hctl = CreateWindowEx(
-	  0,
+	  WS_EX_STATICEDGE,
 	  "cluewin",
 	  "",
 	  WS_CHILD,
 	  550,
-	  130,
-	  400,
-	  600,
+	  50,
+	  450,
+	  680,
 	  hwnd,
 	  (HMENU) ID_CLUEWIN,
 	  (HINSTANCE) GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
@@ -452,8 +420,8 @@ static void CreateControls(HWND hwnd, CROSSWORD *cw)
 	  "button",
 	  "Word complexity",
 	  WS_CHILD | BS_GROUPBOX,
-	  550,
-	  0,
+	  50,
+	  430,
 	  130,
 	  125,
 	  hwnd,
@@ -462,6 +430,7 @@ static void CreateControls(HWND hwnd, CROSSWORD *cw)
 	  0
   );
   assert(hctl);
+  SendMessage(hctl, WM_SETFONT, (WPARAM)g_hcaptionfont, TRUE);
   ShowWindow(hctl, SW_SHOWNORMAL);
 
   hctl = CreateWindowEx(
@@ -469,8 +438,8 @@ static void CreateControls(HWND hwnd, CROSSWORD *cw)
 	  "button",
 	  "Easy (+ phrases)",
 	  WS_CHILD | WS_GROUP | BS_AUTORADIOBUTTON,
-	  555,
-	  25,
+	  55,
+	  430+25,
 	  95,
 	  20,
 	  hwnd,
@@ -487,8 +456,8 @@ static void CreateControls(HWND hwnd, CROSSWORD *cw)
 	  "button",
 	  "Medium",
 	  WS_CHILD  | BS_AUTORADIOBUTTON,
-	  555,
-	  50,
+	  55,
+	  430+50,
 	  60,
 	  20,
 	  hwnd,
@@ -505,8 +474,8 @@ static void CreateControls(HWND hwnd, CROSSWORD *cw)
 	  "button",
 	  "Rare",
 	  WS_CHILD | BS_AUTORADIOBUTTON,
-	  555,
-	  75,
+	  55,
+	  430+75,
 	  60,
 	  20,
 	  hwnd,
@@ -523,8 +492,8 @@ static void CreateControls(HWND hwnd, CROSSWORD *cw)
 	  "button",
 	  "Very rare",
 	  WS_CHILD | BS_AUTORADIOBUTTON,
-	  555,
-	  100,
+	  55,
+	  430 + 100,
 	  90,
 	  20,
 	  hwnd,
@@ -634,7 +603,6 @@ static void Load(HWND hwnd)
 		SetPuzzleSize(hwnd, cw->width, cw->height);
 		SendMessage(GetDlgItem(hwnd, ID_GRIDWIN), GW_SETCROSSWORD, 0, (LPARAM) cw);
 		SendMessage(GetDlgItem(hwnd, ID_CLUEWIN), CW_SETCROSSWORD, 0, (LPARAM) cw);
-		RepopulateListBoxes(hwnd);
 	 }
   }
   free(fname);
@@ -662,12 +630,12 @@ static void Undo(HWND hwnd)
 	tempcw = undo_pop();
 	if (!tempcw)
 		return;
+	
+	SetPuzzleSize(hwnd, tempcw->width, tempcw->height);
+	SendMessage(GetDlgItem(hwnd, ID_GRIDWIN), GW_SETCROSSWORD, 0, (LPARAM)tempcw);
+	SendMessage(GetDlgItem(hwnd, ID_CLUEWIN), CW_SETCROSSWORD, 0, (LPARAM)tempcw);
 	killcrossword(cw);
-	cw = tempcw;
-	SetPuzzleSize(hwnd, cw->width, cw->height);
-	SendMessage(GetDlgItem(hwnd, ID_GRIDWIN), GW_SETCROSSWORD, 0, (LPARAM)cw);
-	SendMessage(GetDlgItem(hwnd, ID_CLUEWIN), CW_SETCROSSWORD, 0, (LPARAM)cw);
-	RepopulateListBoxes(hwnd);
+	cw = tempcw; 
 	
 }
 
@@ -787,31 +755,6 @@ static void SetPuzzleSize(HWND hwnd, int width, int height)
 	   MoveWindow( GetDlgItem(hwnd, ID_GRIDWIN), x, y, winwidth * 24, winheight * 24, TRUE);
 	}
 	SendMessage(GetDlgItem(hwnd, ID_GRIDWIN), GW_SETCROSSWORD, 0, (LPARAM) cw);
-}
-
-static void RepopulateListBoxes(HWND hwnd)
-{
-   HWND lbacross;
-   HWND lbdown;
-   int i;
-   char buff[1024];
-
-   lbacross = GetDlgItem(hwnd, ID_ACROSSWORDS_LB);
-   SendMessage(lbacross, LB_RESETCONTENT, 0, 0);
-   for(i=0;i<cw->Nacross;i++)
-   {
-	   sprintf(buff, "%2d. %s", cw->numbersacross[i], cw->wordsacross[i]); 
-	   SendMessage(lbacross, LB_ADDSTRING, 0, (LPARAM) buff);
-   }
-
-   lbdown = GetDlgItem(hwnd, ID_DOWNWORDS_LB);
-   SendMessage(lbdown, LB_RESETCONTENT, 0, 0);
-   for(i=0;i<cw->Ndown;i++)
-   {
-	   sprintf(buff, "%2d. %s", cw->numbersdown[i], cw->wordsdown[i]);
-	   SendMessage(lbdown, LB_ADDSTRING, 0, (LPARAM) buff);
-   }
-	  
 }
 
 static void CopyClues(HWND hwnd)
@@ -969,7 +912,6 @@ static void GenFromWordList(HWND hwnd)
 
     SendMessage(GetDlgItem(hwnd, ID_GRIDWIN), GW_SETCROSSWORD, 0, (LPARAM) cw);
     SendMessage(GetDlgItem(hwnd, ID_CLUEWIN), CW_SETCROSSWORD, 0, (LPARAM) cw);
-    RepopulateListBoxes(hwnd);
   }
 
   killwordlist(list, N);
