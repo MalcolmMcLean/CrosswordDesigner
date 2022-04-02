@@ -559,7 +559,9 @@ static LRESULT CALLBACK ClueEntryWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
 				}
 				if (event == EN_KILLFOCUS && dirty)
 				{
-					undo_push(clueentry->cw);
+					// causing problems. Windows is throwing kill foucs messages at us after 
+					// another undo is invoked from the menu
+					//undo_push(clueentry->cw);
 					if (clueentry->index < clueentry->cw->Nacross)
 						crossword_setacrossclue(clueentry->cw, clueentry->number, clue);
 					else
