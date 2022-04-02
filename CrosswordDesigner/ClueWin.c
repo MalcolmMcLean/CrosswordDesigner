@@ -538,6 +538,7 @@ static LRESULT CALLBACK ClueEntryWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
 					InvalidateRect(hwnd, 0, FALSE);
 					
 				}
+				DeleteDC(hdc);
 			}
 			if (event == EN_KILLFOCUS)
 			{
@@ -675,7 +676,7 @@ static void CreateClueEntryControls(HWND hwnd, CLUEENTRY *ce)
 		0,
 		"edit",
 		"",
-		WS_CHILD | WS_VISIBLE | ES_MULTILINE,
+		WS_CHILD | WS_VISIBLE | ES_MULTILINE | SS_SUNKEN,
 		50,
 		10,
 		winrect.right - winrect.left - 50 - 20,
@@ -693,6 +694,27 @@ static void CreateClueEntryControls(HWND hwnd, CLUEENTRY *ce)
 	{
 		sprintf(buff, "clue %d", ce->number);
 		clue = buff;
+	}
+
+	if (strlen(clue) > 28)
+	{
+		HDC hdc = GetDC(hwnd);
+		SIZE sz;
+		RECT rectedt;
+		int linesneeded;
+		GetClientRect(hctl, &rectedt);
+		SelectObject(hdc, g_inputfont);
+		GetTextExtentPoint32(hdc, clue, strlen(clue), &sz);
+		linesneeded = sz.cx / (rectedt.right - 16) + 1;
+		if (linesneeded > 0 && linesneeded != rectedt.bottom / 17)
+		{
+			WPARAM wp;
+			MoveWindow(hctl,
+				50, 10, rectedt.right, 17 * linesneeded, TRUE);
+			ce->rect.bottom = 32 + (linesneeded - 1) * 17;
+			MoveWindow(hwnd, 0, 0, rect.right, ce->rect.bottom, FALSE);
+		}
+		DeleteDC(hdc);
 	}
 	
 	SetWindowText(hctl, clue);
