@@ -522,6 +522,7 @@ static LRESULT CALLBACK ClueEntryWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
 				SIZE sz;
 				RECT rectedt;
 				int linesneeded;
+				int dirty = 0;
 				GetClientRect(GetDlgItem(hwnd, ID_CLUEENTRYCLUE_EDT), &rectedt);
 				SelectObject(hdc, g_inputfont);
 				GetWindowText(GetDlgItem(hwnd, ID_CLUEENTRYCLUE_EDT), clue, 255);
@@ -539,8 +540,34 @@ static LRESULT CALLBACK ClueEntryWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
 					
 				}
 				DeleteDC(hdc);
+				if (clueentry->index < clueentry->cw->Nacross)
+				{
+					if (clueentry->cw->cluesacross[clueentry->index] == 0 ||
+						strcmp(clue, clueentry->cw->cluesacross[clueentry->index]))
+						dirty = 1;
+				}
+				else
+				{
+					if (clueentry->cw->cluesdown[clueentry->index - clueentry->cw->Nacross] == 0 ||
+						strcmp(clue, clueentry->cw->cluesdown[clueentry->index - clueentry->cw->Nacross]))
+						dirty = 1;
+
+				}
+				if(dirty)
+				{
+					// causing problems. Windows is throwing kill foucs messages at us after 
+					// another undo is invoked from the menu
+					undo_push(clueentry->cw);
+					if (clueentry->index < clueentry->cw->Nacross)
+						crossword_setacrossclue(clueentry->cw, clueentry->number, clue);
+					else
+						crossword_setdownclue(clueentry->cw, clueentry->number, clue);
+
+				}
+				SendMessage(GetDlgItem(hwnd, ID_CLUEENTRYCLUE_EDT), EM_EMPTYUNDOBUFFER, 0, 0);
+
 			}
-			if (event == EN_KILLFOCUS)
+			if (0 && event == EN_KILLFOCUS)
 			{
 				int dirty = 0;
 				int index;

@@ -126,11 +126,19 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 	  }
 	  break;
     case GW_SETCROSSWORD:
-	  gw->cw = (CROSSWORD *) lParam;
-	
-	  DoScrollBars(hwnd, gw);
-	  InvalidateRect(hwnd, 0, TRUE);
-	  UpdateWindow(hwnd);
+		if (gw->cw != (CROSSWORD*)lParam &&
+			crossword_gridsidentical(gw->cw, (CROSSWORD*)lParam))
+		{
+			gw->cw = (CROSSWORD*)lParam;
+	    }
+		else
+		{
+			gw->cw = (CROSSWORD*)lParam;
+
+			DoScrollBars(hwnd, gw);
+			InvalidateRect(hwnd, 0, TRUE);
+			UpdateWindow(hwnd);
+		}
 	  break;
 	case WM_SETFOCUS:
 		gw->hasfocus = 1;

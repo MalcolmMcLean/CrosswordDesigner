@@ -504,6 +504,27 @@ int crossword_connected(CROSSWORD *cw)
 	return 0;
 }
 
+int crossword_gridsidentical(CROSSWORD* cwa, CROSSWORD* cwb)
+{
+	int x, y;
+
+	if (cwa->width != cwb->width)
+		return 0;
+	if (cwa->height != cwb->height)
+		return 0;
+	if (memcmp(cwa->grid, cwb->grid, cwa->width * cwa->height))
+		return 0;
+	for (y = 0; y <cwa->height; y++)
+		for (x = 0; x < cwa->width; x++)
+		{
+			if (cwa->grid[y * cwa->width + x] &&
+				cwa->solution[y * cwa->width + x] != cwb->solution[y * cwb->width + x])
+				return 0;
+		}
+
+	return 1;
+}
+
 static int renumber(CROSSWORD *cw)
 {
   void *temp;

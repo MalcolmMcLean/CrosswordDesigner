@@ -66,6 +66,7 @@
 #define ID_REDO_MNU 121
 
 HINSTANCE hInst;
+HWND g_hMainHwnd;
 HFONT g_hcaptionfont;
 HFONT g_hinputfont;
 CROSSWORD *cw;
@@ -113,7 +114,12 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	NONCLIENTMETRICS metrics;
  	// TODO: Place code here.
 	MSG msg;
-	//HACCEL hAccelTable;
+	HACCEL hAccelTable;
+
+	static ACCEL accelerators[2] = {
+		{FCONTROL | FNOINVERT | FVIRTKEY, 0x5A , ID_UNDO_MNU},
+		{FCONTROL | FNOINVERT | FVIRTKEY, 0x59, ID_REDO_MNU}
+	};
 
 	srand((unsigned)time(0));
 	// Initialize global strings
@@ -152,15 +158,17 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	}
 
 //	hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_WINHELLO4));
+	hAccelTable = CreateAcceleratorTable(&accelerators, 2);
+	assert(hAccelTable);
 
 	// Main message loop:
 	while (GetMessage(&msg, NULL, 0, 0))
 	{
-//		if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
-//		{
+		if (!TranslateAccelerator(g_hMainHwnd, hAccelTable, &msg))
+		{
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
-//		}
+		}
 	}
 
 	return (int) msg.wParam;
@@ -217,6 +225,7 @@ static BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    hWnd = CreateWindow("CrosswordDesigner", "Crossword Designer", WS_OVERLAPPEDWINDOW,
       CW_USEDEFAULT, CW_USEDEFAULT, 1024, 800, NULL, NULL, hInstance, NULL);
+   g_hMainHwnd = hWnd;
 
    if (!hWnd)
    {
@@ -544,8 +553,8 @@ static void FillMenus(HWND hwnd)
 
 
   editmenu = CreateMenu();
-  AppendMenu(editmenu, MF_STRING, ID_UNDO_MNU, "Undo");
-  AppendMenu(editmenu, MF_STRING, ID_REDO_MNU, "Redo");
+  AppendMenu(editmenu, MF_STRING, ID_UNDO_MNU, "Undo\t\t\tCtrl-Z");
+  AppendMenu(editmenu, MF_STRING, ID_REDO_MNU, "Redo\t\t\tCtrl-Y");
   AppendMenu(editmenu, MF_STRING, ID_RESIZE_MNU, "Set size...");
   AppendMenu(editmenu, MF_STRING | MF_POPUP, (UINT_PTR)randomgridmenu, "Starter grid");
   AppendMenu(editmenu, MF_STRING, ID_SETTINGS_MNU, "Settings...");
@@ -748,11 +757,15 @@ static void SetPuzzleSize(HWND hwnd, int width, int height)
 {
 	int x, y;
 	int winwidth, winheight;
+	int changed = 0;
 
 	x = 50;
 	y = 50;
-	if(cw->width != width || cw->height != height)
+	if (cw->width != width || cw->height != height)
+	{
 		crossword_resize(cw, width, height);
+		changed = 1;
+	}
 	if(width <= 15 && height <= 15)
 	{
 	  x = 50 - ( (width - 15) * 24 ) / 2;
@@ -773,7 +786,8 @@ static void SetPuzzleSize(HWND hwnd, int width, int height)
 	    winheight = 15;
 	   MoveWindow( GetDlgItem(hwnd, ID_GRIDWIN), x, y, winwidth * 24, winheight * 24, TRUE);
 	}
-	SendMessage(GetDlgItem(hwnd, ID_GRIDWIN), GW_SETCROSSWORD, 0, (LPARAM) cw);
+	if (changed)
+		SendMessage(GetDlgItem(hwnd, ID_GRIDWIN), GW_SETCROSSWORD, 0, (LPARAM) cw);
 }
 
 static void CopyClues(HWND hwnd)

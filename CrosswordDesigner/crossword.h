@@ -44,5 +44,6 @@ int crossword_resize(CROSSWORD* cw, int width, int height);
 void crossword_startgrid(CROSSWORD *cw);
 void crossword_randgrid(CROSSWORD *cw);
 int crossword_connected(CROSSWORD *cw);
+int crossword_gridsidentical(CROSSWORD* cwa, CROSSWORD* cwb);
 
 #endif
