@@ -539,7 +539,7 @@ static LRESULT CALLBACK ClueEntryWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
 					InvalidateRect(hwnd, 0, FALSE);
 					
 				}
-				DeleteDC(hdc);
+				ReleaseDC(hwnd, hdc);
 				if (clueentry->index < clueentry->cw->Nacross)
 				{
 					if (clueentry->cw->cluesacross[clueentry->index] == 0 ||
@@ -741,7 +741,7 @@ static void CreateClueEntryControls(HWND hwnd, CLUEENTRY *ce)
 			ce->rect.bottom = 32 + (linesneeded - 1) * 17;
 			MoveWindow(hwnd, 0, 0, rect.right, ce->rect.bottom, FALSE);
 		}
-		DeleteDC(hdc);
+		ReleaseDC(hwnd, hdc);
 	}
 	
 	SetWindowText(hctl, clue);

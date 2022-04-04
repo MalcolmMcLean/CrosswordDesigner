@@ -21,6 +21,7 @@
 #include "console.h"
 #include "numwin.h"
 #include "OpenFileDlg.h"
+#include "MyMessageBox.h"
 #include "SettingsDialog.h"
 #include "SizeDialog.h"
 #include "GenWordListDialog.h"
@@ -126,6 +127,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 //	LoadString(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
 //	LoadString(hInstance, IDC_WINHELLO4, szWindowClass, MAX_LOADSTRING);
 	RegisterConsole(hInstance);
+	RegisterMyMessageBox(hInstance);
 	//MakeConsole(hInstance);
 	MyRegisterClass(hInstance);
 	RegisterNumWin(hInstance);
@@ -264,7 +266,7 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 	case WM_CREATE:
 	   if (wordmatcherinit() != 0)
 	   {
-		   MessageBox(hWnd, "Not enough memory", "Fatal error", MB_ICONERROR | MB_OK);
+		   MyMessageBox(hWnd, "Not enough memory", "Fatal error", MB_ICONERROR | MB_OK);
 		   exit(-1);
 	   }
 	   cw = createcrossword(9, 9);
@@ -608,7 +610,7 @@ static void Load(HWND hwnd)
         cwlist = loadfromxpf(fname, &N, &err);
 	 if(cwlist == 0)
 	 {
-	   MessageBox(hwnd, "Load failed", "Wug", MB_OK);
+	   MyMessageBox(hwnd, "Load failed", "Wug", MB_OK);
 	 }
 	 else
 	 {
@@ -823,7 +825,7 @@ error_exit:
 	if (hGlobal)
 		GlobalFree(hGlobal);
 	free(clues);
-	MessageBox(hwnd, "There was an error copying your clues to the clipboard", "Windows error", MB_OK);
+	MyMessageBox(hwnd, "There was an error copying your clues to the clipboard", "Windows error", MB_OK);
 }
 
 static void CopySolutionAsText(HWND hwnd)
@@ -860,7 +862,7 @@ error_exit:
 	if (hGlobal)
 		GlobalFree(hGlobal);
 	free(solutiontxt);
-	MessageBox(hwnd, "There was an error copying your solution to the clipboard", "Windows error", MB_OK);
+	MyMessageBox(hwnd, "There was an error copying your solution to the clipboard", "Windows error", MB_OK);
 }
 static void CopyPuzzleGrid(HWND hwnd)
 {
@@ -881,7 +883,7 @@ static void CopyPuzzleGrid(HWND hwnd)
      CloseClipboard();
   }
   else
-    MessageBox(hwnd, "There was an error copying your data to the clipboard", "Windows error", MB_OK);
+    MyMessageBox(hwnd, "There was an error copying your data to the clipboard", "Windows error", MB_OK);
 
   DeleteObject(hMemBmp);
   DeleteDC(hDCMem);
@@ -907,7 +909,7 @@ static void CopySolutionGrid(HWND hwnd)
      CloseClipboard();
   }
   else
-    MessageBox(hwnd, "There was an error copying your data to the clipboard", "Windows error", MB_OK);
+    MyMessageBox(hwnd, "There was an error copying your data to the clipboard", "Windows error", MB_OK);
 
   DeleteObject(hMemBmp);
   DeleteDC(hDCMem);
