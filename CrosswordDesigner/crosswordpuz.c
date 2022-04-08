@@ -197,7 +197,7 @@ int fsaveaspuz(CROSSWORD *cw, FILE *fp)
 	int Nclues;
 	char *board;
 	char *player_grid;
-	int bitmask = 0;
+	int bitmask = 1;
 	int i;
 
 	clues = getclues(cw, &Nclues);
@@ -245,6 +245,7 @@ int fsaveaspuz(CROSSWORD *cw, FILE *fp)
 	fputasciiz(copyright, fp);
 	for (i = 0; i < cw->Nacross + cw->Ndown; i++)
 		fputasciiz(clues[i], fp);
+
 	fputasciiz(notes, fp);
 
 	free(board);
@@ -487,7 +488,9 @@ static int fputasciiz(const char *str, FILE *fp)
 static int fget16le(FILE *fp)
 {
 	int answer = 0;
-	answer = fgetc(fp) | (fgetc(fp) << 8);
+	int low = fgetc(fp);
+	int high = fgetc(fp);
+	answer = (high << 8) | low;
 	return answer;
 }
 
