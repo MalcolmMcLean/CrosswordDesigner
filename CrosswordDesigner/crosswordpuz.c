@@ -84,12 +84,25 @@ CROSSWORD *floadfrompuz(FILE *fp, int *err)
 	char *title = 0;
 	char *author = 0;
 	char *copyright = 0;
+	char* notes = 0;
 	int i;
 	char **clues = 0;
 	PUZHEADER header;
 	int ch;
 	int x, y;
 	int ai, di;
+
+
+	unsigned char* mask = "ICHEATED";
+	int file_checksum;
+	int cib_checksum;
+	int solution_checksum;
+	int grid_checksum;
+	int partial_checksumv;
+	int cib_checksum_unmasked;
+	int solution_checksum_unmasked;
+	int grid_checksum_unmasked;
+	int partial_checksum_unmasked;
 
 	error = floadpuzheader(&header, fp);
 	if (error)
@@ -112,11 +125,14 @@ CROSSWORD *floadfrompuz(FILE *fp, int *err)
 	for (i = 0; i < header.Nclues; i++)
 		clues[i] = freadasciiz(fp);
 
+	notes = freadasciiz(fp);
+
 	if (feof(fp) || ferror(fp))
 	{
 		error = -3;
 		goto error_exit;
 	}
+	
 	answer = createcrossword(header.width, header.height);
 	if (!answer)
 		goto error_exit;
@@ -131,6 +147,19 @@ CROSSWORD *floadfrompuz(FILE *fp, int *err)
 			crossword_setcell(answer, x, y, ch);
 		}
 	}
+
+	cib_checksum_unmasked = (header.low_checksums[0] ^ mask[0]) + (header.high_checksums[0] ^ mask[4]) * 256;
+	solution_checksum_unmasked = (header.low_checksums[1] ^ mask[1]) + (header.high_checksums[1] ^ mask[5]) * 256;
+	grid_checksum_unmasked = (header.low_checksums[2] ^ mask[2]) + (header.high_checksums[2] ^ mask[6]) * 256;
+	partial_checksum_unmasked = (header.low_checksums[3] ^ mask[3]) + (header.high_checksums[3] ^ mask[7]) * 256;
+
+	file_checksum = checksum_file(answer, clues, answer->Ndown + answer->Nacross, board, player_state, title, author, copyright, notes);
+	cib_checksum = checksum_cib(answer);
+	solution_checksum = cksum_region(board, answer->width * answer->height, 0);
+	grid_checksum = cksum_region(player_state, answer->width * answer->height, 0);
+	partial_checksumv = checksum_partial(answer, clues, answer->Nacross + answer->Ndown, title, author, copyright, notes);
+	
+	/* Currently not checking checksums */
 
 	ai = 0;
 	di = 0;
@@ -228,7 +257,7 @@ int fsaveaspuz(CROSSWORD *cw, FILE *fp)
 	fputc(mask[6] ^ ((grid_checksum >> 8) & 0xFF), fp);
 	fputc(mask[7] ^ ((partial_checksum >> 8) & 0xFF), fp);
 
-	fwrite("v1.2", 1, 4, fp);
+	fwrite("1.3", 1, 4, fp);
 	fput16le(0, fp); /* reserved */
 	fput16le(scrambled_checksum, fp);
 	fwrite(reserved_str, 1, 12, fp);
@@ -267,14 +296,17 @@ static unsigned short checksum_file(CROSSWORD *cw, char **clues, int Nclues, cha
 	answer = checksum_cib(cw);
 	answer = cksum_region(solution, cw->width *cw->height, answer);
 	answer = cksum_region(grid, cw->width * cw->height, answer);
-    answer = cksum_region(title, strlen(title) + 1, answer);
-	answer = cksum_region(author, strlen(author) + 1, answer);
-    answer = cksum_region(copyright, strlen(copyright) + 1, answer);
+	if (title && strlen(title))
+		answer = cksum_region(title, strlen(title) + 1, answer);
+	if (author && strlen(author))
+		answer = cksum_region(author, strlen(author) + 1, answer);
+	if (copyright && strlen(copyright))
+		answer = cksum_region(copyright, strlen(copyright) + 1, answer);
 
 	for (i = 0; i < Nclues; i++)
 		answer = cksum_region(clues[i], strlen(clues[i]), answer);
-
-	answer = cksum_region(notes, strlen(notes) + 1, answer);
+	if (notes && strlen(notes))
+		answer = cksum_region(notes, strlen(notes) + 1, answer);
 
 	return answer;
 }
@@ -284,12 +316,16 @@ static unsigned short checksum_partial(CROSSWORD *cw, char **clues, int Nclues, 
 	unsigned short answer = 0;
 	int i;
 
-	answer = cksum_region(title, strlen(title) +1, answer);
-	answer = cksum_region(author, strlen(author) + 1, answer);
-	answer = cksum_region(copyright, strlen(copyright) + 1, answer);
+	if (title && strlen(title))
+		answer = cksum_region(title, strlen(title) +1, answer);
+	if (author && strlen(author))
+		answer = cksum_region(author, strlen(author) + 1, answer);
+	if (copyright && strlen(copyright))
+		answer = cksum_region(copyright, strlen(copyright) + 1, answer);
 	for (i = 0; i < Nclues; i++)
 		answer = cksum_region(clues[i], strlen(clues[i]), answer);
-	answer = cksum_region(notes, strlen(notes) + 1, answer);
+	if (notes && strlen(notes))
+		answer = cksum_region(notes, strlen(notes) + 1, answer);
 
 	return answer;
 }
@@ -301,7 +337,7 @@ static unsigned short checksum_cib(CROSSWORD *cw)
 	int bitmask;
 
 	Nclues = cw->Nacross + cw->Ndown;
-	bitmask = 0;
+	bitmask = 1;
 
 	buff[0] = cw->width;
 	buff[1] = cw->height;
