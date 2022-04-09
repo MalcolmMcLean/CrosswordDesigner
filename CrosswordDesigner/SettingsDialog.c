@@ -30,8 +30,13 @@ static void SetTxt(HWND hwnd, const char* text);
 static void trim(char* str);
 static char *mystrdup(const char *str);
 
+static HFONT g_hcaptionfont;
+static HFONT g_hmessagefont;
+
+
 void RegisterSettingsDialog(HINSTANCE hInstance)
 {
+	NONCLIENTMETRICS metrics;
   WNDCLASSEX wndclass;
 
   wndclass.cbSize = sizeof(WNDCLASSEX);
@@ -48,6 +53,10 @@ void RegisterSettingsDialog(HINSTANCE hInstance)
   wndclass.hIconSm = 0;
 
   RegisterClassEx(&wndclass);
+  metrics.cbSize = sizeof(NONCLIENTMETRICS);
+  SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS), &metrics, 0);
+  g_hmessagefont = CreateFontIndirect(&metrics.lfMessageFont);
+  g_hcaptionfont = CreateFontIndirect(&metrics.lfCaptionFont);
 }
 
 int OpenSettingsDialog(HWND hparent, SETTINGS *set)
@@ -66,7 +75,7 @@ int OpenSettingsDialog(HWND hparent, SETTINGS *set)
 	  WS_POPUP | WS_OVERLAPPED | WS_CAPTION,
 	  rect.left, //0,//CW_USEDEFAULT,
 	  rect.top, //0,//CW_USEDEFAULT,
-	  300, //rect.right - rect.left,
+	  500, //rect.right - rect.left,
 	  300, //rect.bottom - rect.top, //450,
 	  hparent,
 	  NULL,
@@ -151,9 +160,9 @@ static void CreateControls(HWND hwnd)
 	  0,
 	  "static",
 	  "Title",
-	  WS_CHILD | WS_VISIBLE,
+	  WS_CHILD | WS_VISIBLE | SS_RIGHT,
 	  10,
-	  20, 
+	  22, 
 	  60,
 	  20,
 	  hwnd,
@@ -161,6 +170,7 @@ static void CreateControls(HWND hwnd)
 	  (HINSTANCE) GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
 	  0
 	  );
+	SendMessage(hctl, WM_SETFONT, (WPARAM)g_hcaptionfont, TRUE);
 
 	hctl = CreateWindowEx(
 	  0,
@@ -181,9 +191,9 @@ static void CreateControls(HWND hwnd)
 	  0,
 	  "static",
 	  "Author",
-	  WS_CHILD | WS_VISIBLE,
+	  WS_CHILD | WS_VISIBLE | SS_RIGHT,
 	  10,
-	  50, 
+	  52, 
 	  60,
 	  20,
 	  hwnd,
@@ -191,6 +201,7 @@ static void CreateControls(HWND hwnd)
 	  (HINSTANCE) GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
 	  0
 	  );
+	SendMessage(hctl, WM_SETFONT, (WPARAM)g_hcaptionfont, TRUE);
 
 	hctl = CreateWindowEx(
 	  0,
@@ -211,9 +222,9 @@ static void CreateControls(HWND hwnd)
 	  0,
 	  "static",
 	  "Editor",
-	  WS_CHILD | WS_VISIBLE,
+	  WS_CHILD | WS_VISIBLE | SS_RIGHT,
 	  10,
-	  80, 
+	  82, 
 	  60,
 	  20,
 	  hwnd,
@@ -221,6 +232,7 @@ static void CreateControls(HWND hwnd)
 	  (HINSTANCE) GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
 	  0
 	  );
+	SendMessage(hctl, WM_SETFONT, (WPARAM)g_hcaptionfont, TRUE);
 
 	hctl = CreateWindowEx(
 	  0,
@@ -241,16 +253,17 @@ static void CreateControls(HWND hwnd)
 	  0,
 	  "static",
 	  "Publisher",
-	  WS_CHILD | WS_VISIBLE,
+	  WS_CHILD | WS_VISIBLE | SS_RIGHT,
 	  10,
-	  110, 
-	  75,
+	  112, 
+	  60,
 	  20,
 	  hwnd,
 	  (HMENU) 0,
 	  (HINSTANCE) GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
 	  0
 	  );
+	SendMessage(hctl, WM_SETFONT, (WPARAM)g_hcaptionfont, TRUE);
 
 	hctl = CreateWindowEx(
 	  0,
@@ -271,9 +284,9 @@ static void CreateControls(HWND hwnd)
 	  0,
 	  "static",
 	  "Date",
-	  WS_CHILD | WS_VISIBLE,
+	  WS_CHILD | WS_VISIBLE | SS_RIGHT,
 	  10,
-	  140, 
+	  142, 
 	  60,
 	  20,
 	  hwnd,
@@ -281,6 +294,7 @@ static void CreateControls(HWND hwnd)
 	  (HINSTANCE) GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
 	  0
 	  );
+	SendMessage(hctl, WM_SETFONT, (WPARAM)g_hcaptionfont, TRUE);
 
 	hctl = CreateWindowEx(
 	  0,
@@ -301,9 +315,9 @@ static void CreateControls(HWND hwnd)
 	  0,
 	  "static",
 	  "Copyright",
-	  WS_CHILD | WS_VISIBLE,
+	  WS_CHILD | WS_VISIBLE | SS_RIGHT,
 	  10,
-	  170, 
+	  172, 
 	  65,
 	  20,
 	  hwnd,
@@ -311,6 +325,7 @@ static void CreateControls(HWND hwnd)
 	  (HINSTANCE) GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
 	  0
 	  );
+	SendMessage(hctl, WM_SETFONT, (WPARAM)g_hcaptionfont, TRUE);
 
 	hctl = CreateWindowEx(
 	  0,
@@ -342,6 +357,7 @@ static void CreateControls(HWND hwnd)
 	  (HINSTANCE) GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
 	  0
 	  );
+	SendMessage(hctl, WM_SETFONT, (WPARAM)g_hcaptionfont, TRUE);
 
 	hctl = CreateWindowEx(
 	  0,
@@ -357,69 +373,9 @@ static void CreateControls(HWND hwnd)
 	  (HINSTANCE) GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
 	  0
 	  );
+	SendMessage(hctl, WM_SETFONT, (WPARAM)g_hcaptionfont, TRUE);
 	
-	/*
-    hctl = CreateWindowEx(
-	  0,
-	  "static",
-	  "Width",
-	  WS_CHILD | WS_VISIBLE,
-	  10,
-	  rect.bottom -150, 
-	  60,
-	  20,
-	  hwnd,
-	  (HMENU) 0,
-	  (HINSTANCE) GetWindowLong(hwnd, GWL_HINSTANCE),
-	  0
-	  );
-
-	hctl = CreateWindowEx(
-	  0,
-	  "numwin",
-	  "",
-	  WS_CHILD | WS_VISIBLE,
-	  rect.right/2 - 25,
-	  rect.bottom -150, 
-	  60,
-	  20,
-	  hwnd,
-	  (HMENU) ID_WIDTH_NUM,
-	  (HINSTANCE) GetWindowLong(hwnd, GWL_HINSTANCE),
-	  0
-	  );
 	
-
-	hctl = CreateWindowEx(
-	  0,
-	  "static",
-	  "Height",
-	  WS_CHILD | WS_VISIBLE,
-	  10,
-	  rect.bottom -100, 
-	  60,
-	  20,
-	  hwnd,
-	  (HMENU) 0,
-	  (HINSTANCE) GetWindowLong(hwnd, GWL_HINSTANCE),
-	  0
-	  );
-
-	hctl = CreateWindowEx(
-	  0,
-	  "numwin",
-	  "",
-	  WS_CHILD | WS_VISIBLE,
-	  rect.right/2 - 25,
-	  rect.bottom -100, 
-	  60,
-	  20,
-	  hwnd,
-	  (HMENU) ID_HEIGHT_NUM,
-	  (HINSTANCE) GetWindowLong(hwnd, GWL_HINSTANCE),
-	  0
-	  );
-	  */
 	
 
 }

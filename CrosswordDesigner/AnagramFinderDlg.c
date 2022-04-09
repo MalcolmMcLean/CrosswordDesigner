@@ -21,9 +21,13 @@ static void MatchWord(HWND hwnd);
 static char *GetTxt(HWND hwnd);
 static void trim(char *str);
 
+static HFONT g_hcaptionfont;
+static HFONT g_hmessagefont;
+
 void RegisterAnagramFinderDialog(HINSTANCE hInstance)
 {
   WNDCLASSEX wndclass;
+  NONCLIENTMETRICS metrics;
 
   wndclass.cbSize = sizeof(WNDCLASSEX);
   wndclass.style = CS_HREDRAW | CS_VREDRAW;
@@ -39,6 +43,11 @@ void RegisterAnagramFinderDialog(HINSTANCE hInstance)
   wndclass.hIconSm = 0;
 
   RegisterClassEx(&wndclass);
+
+  metrics.cbSize = sizeof(NONCLIENTMETRICS);
+  SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS), &metrics, 0);
+  g_hmessagefont = CreateFontIndirect(&metrics.lfMessageFont);
+  g_hcaptionfont = CreateFontIndirect(&metrics.lfCaptionFont);
 }
 
 int OpenAnagramFinderDialog(HWND hparent)
@@ -139,6 +148,7 @@ static void CreateControls(HWND hwnd)
 	  (HINSTANCE) GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
 	  0
 	  );
+	SendMessage(hctl, WM_SETFONT, (WPARAM)g_hcaptionfont, TRUE);
 
 	hctl = CreateWindowEx(
 	  0,
@@ -184,6 +194,8 @@ static void CreateControls(HWND hwnd)
 	  (HINSTANCE) GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
 	  0
 	  );
+	 SendMessage(hctl, WM_SETFONT, (WPARAM)g_hcaptionfont, TRUE);
+
 
 	  hctl = CreateWindowEx(
 	  0,
@@ -266,6 +278,7 @@ static void CreateControls(HWND hwnd)
 	  (HINSTANCE) GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
 	  0
 	  );
+	SendMessage(hctl, WM_SETFONT, (WPARAM)g_hcaptionfont, TRUE);
 
 
 	

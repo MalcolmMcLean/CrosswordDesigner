@@ -18,8 +18,12 @@ typedef struct
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 static void CreateControls(HWND hwnd);
 
+static HFONT g_hcaptionfont;
+static HFONT g_hmessagefont;
+
 void RegisterSizeDialog(HINSTANCE hInstance)
 {
+	NONCLIENTMETRICS metrics;
   WNDCLASSEX wndclass;
 
   wndclass.cbSize = sizeof(WNDCLASSEX);
@@ -36,6 +40,11 @@ void RegisterSizeDialog(HINSTANCE hInstance)
   wndclass.hIconSm = 0;
 
   RegisterClassEx(&wndclass);
+
+  metrics.cbSize = sizeof(NONCLIENTMETRICS);
+  SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS), &metrics, 0);
+  g_hmessagefont = CreateFontIndirect(&metrics.lfMessageFont);
+  g_hcaptionfont = CreateFontIndirect(&metrics.lfCaptionFont);
 }
 
 int OpenSizeDialog(HWND hparent, int *width, int *height)
@@ -138,9 +147,9 @@ static void CreateControls(HWND hwnd)
 	  0,
 	  "static",
 	  "Width",
-	  WS_CHILD | WS_VISIBLE,
-	  10,
-	  rect.bottom -150, 
+	  WS_CHILD | WS_VISIBLE | SS_RIGHT,
+	  50,
+	  rect.bottom -148, 
 	  60,
 	  20,
 	  hwnd,
@@ -148,6 +157,7 @@ static void CreateControls(HWND hwnd)
 	  (HINSTANCE) GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
 	  0
 	  );
+	 SendMessage(hctl, WM_SETFONT, (WPARAM)g_hcaptionfont, TRUE);
 
 	hctl = CreateWindowEx(
 	  0,
@@ -169,9 +179,9 @@ static void CreateControls(HWND hwnd)
 	  0,
 	  "static",
 	  "Height",
-	  WS_CHILD | WS_VISIBLE,
-	  10,
-	  rect.bottom -100, 
+	  WS_CHILD | WS_VISIBLE | SS_RIGHT,
+	  50,
+	  rect.bottom - 98, 
 	  60,
 	  20,
 	  hwnd,
@@ -179,6 +189,7 @@ static void CreateControls(HWND hwnd)
 	  (HINSTANCE) GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
 	  0
 	  );
+	SendMessage(hctl, WM_SETFONT, (WPARAM)g_hcaptionfont, TRUE);
 
 	hctl = CreateWindowEx(
 	  0,
@@ -209,6 +220,7 @@ static void CreateControls(HWND hwnd)
 	  (HINSTANCE) GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
 	  0
 	  );
+	SendMessage(hctl, WM_SETFONT, (WPARAM)g_hcaptionfont, TRUE);
 
 	hctl = CreateWindowEx(
 	  0,
@@ -224,6 +236,7 @@ static void CreateControls(HWND hwnd)
 	  (HINSTANCE) GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
 	  0
 	  );
+	SendMessage(hctl, WM_SETFONT, (WPARAM)g_hcaptionfont, TRUE);
 	
    
 	

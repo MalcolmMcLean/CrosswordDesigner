@@ -21,8 +21,12 @@ static void MatchWord(HWND hwnd);
 static char *GetTxt(HWND hwnd);
 static void trim(char *str);
 
+static HFONT g_hcaptionfont;
+static HFONT g_hmessagefont;
+
 void RegisterWordMatcherDialog(HINSTANCE hInstance)
 {
+	NONCLIENTMETRICS metrics;
   WNDCLASSEX wndclass;
 
   wndclass.cbSize = sizeof(WNDCLASSEX);
@@ -39,6 +43,11 @@ void RegisterWordMatcherDialog(HINSTANCE hInstance)
   wndclass.hIconSm = 0;
 
   RegisterClassEx(&wndclass);
+
+  metrics.cbSize = sizeof(NONCLIENTMETRICS);
+  SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS), &metrics, 0);
+  g_hmessagefont = CreateFontIndirect(&metrics.lfMessageFont);
+  g_hcaptionfont = CreateFontIndirect(&metrics.lfCaptionFont);
 }
 
 int OpenWordMatcherDialog(HWND hparent)
@@ -139,6 +148,7 @@ static void CreateControls(HWND hwnd)
 	  (HINSTANCE) GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
 	  0
 	  );
+	SendMessage(hctl, WM_SETFONT, (WPARAM)g_hcaptionfont, TRUE);
 
 	hctl = CreateWindowEx(
 	  0,
@@ -184,6 +194,7 @@ static void CreateControls(HWND hwnd)
 	  (HINSTANCE) GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
 	  0
 	  );
+	 SendMessage(hctl, WM_SETFONT, (WPARAM)g_hcaptionfont, TRUE);
 
 	  hctl = CreateWindowEx(
 	  0,
@@ -266,6 +277,7 @@ static void CreateControls(HWND hwnd)
 	  (HINSTANCE) GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
 	  0
 	  );
+	SendMessage(hctl, WM_SETFONT, (WPARAM)g_hcaptionfont, TRUE);
 
 
 	
