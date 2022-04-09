@@ -49,22 +49,23 @@
 #define ID_PRINT_MNU 103
 #define ID_HTML_MNU 104
 #define ID_HTML_INTERACTIVE_MNU 105
-#define ID_RESIZE_MNU 106
-#define ID_COPY_PUZZLE_MNU 107
-#define ID_COPY_SOLUTION_MNU 108
-#define ID_COPY_SOLUTIONTXT_MNU 109
-#define ID_COPY_CLUES_MNU 110
-#define ID_SETTINGS_MNU 111
-#define ID_WORDMATCHER_MNU 112
-#define ID_ANAGRAMFINDER_MNU 113
-#define ID_FILLGRID_MNU 114
-#define ID_GENFROMLIST_MNU 115
-#define ID_STARTGRID_MNU 116
-#define ID_RNDAMERICANGRID_MNU 117
-#define ID_HELP_MNU 118
-#define ID_ABOUT_MNU 119
-#define ID_UNDO_MNU 120
-#define ID_REDO_MNU 121
+#define ID_EXIT_MNU 106
+#define ID_RESIZE_MNU 107
+#define ID_COPY_PUZZLE_MNU 108
+#define ID_COPY_SOLUTION_MNU 109
+#define ID_COPY_SOLUTIONTXT_MNU 110
+#define ID_COPY_CLUES_MNU 111
+#define ID_SETTINGS_MNU 112
+#define ID_WORDMATCHER_MNU 113
+#define ID_ANAGRAMFINDER_MNU 114
+#define ID_FILLGRID_MNU 115
+#define ID_GENFROMLIST_MNU 116
+#define ID_STARTGRID_MNU 117
+#define ID_RNDAMERICANGRID_MNU 118
+#define ID_HELP_MNU 119
+#define ID_ABOUT_MNU 120
+#define ID_UNDO_MNU 121
+#define ID_REDO_MNU 122
 
 HINSTANCE hInst;
 HWND g_hMainHwnd;
@@ -73,7 +74,7 @@ HFONT g_hinputfont;
 CROSSWORD *cw;
 SETTINGS settings = { 0, };
 int g_difficulty = 0;
-
+int g_dirty = 0;
 
 static ATOM MyRegisterClass(HINSTANCE hInstance);
 static BOOL InitInstance(HINSTANCE hInstance, int nCmdShow);
@@ -300,6 +301,9 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 		case ID_HTML_INTERACTIVE_MNU:
 			ExportAsInteractiveHTML(hWnd);
 			break;
+		case ID_EXIT_MNU:
+			SendMessage(hWnd, WM_CLOSE, 0, 0);
+			break;
 		case ID_SETTINGS_MNU:
 			EditSettings(hWnd);
 			break;
@@ -332,6 +336,7 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			KillWaitDialog(wd);
 			SendMessage(GetDlgItem(hWnd, ID_GRIDWIN), GW_SETCROSSWORD, 0, (LPARAM) cw);
 		    SendMessage(GetDlgItem(hWnd, ID_CLUEWIN), CW_SETCROSSWORD, 0, (LPARAM) cw);
+			g_dirty = 1;
 			break;
 		case ID_GENFROMLIST_MNU:
 			undo_push(cw);
@@ -342,6 +347,7 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
             crossword_randgrid(cw);
 			SendMessage(GetDlgItem(hWnd, ID_GRIDWIN), GW_SETCROSSWORD, 0, (LPARAM) cw);
 		    SendMessage(GetDlgItem(hWnd, ID_CLUEWIN), CW_SETCROSSWORD, 0, (LPARAM) cw);
+			g_dirty = 1;
 			break;
 		case ID_RNDAMERICANGRID_MNU:
 			undo_push(cw);
@@ -350,6 +356,7 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			setcrosswordtorandomamerican(cw);
 			SendMessage(GetDlgItem(hWnd, ID_GRIDWIN), GW_SETCROSSWORD, 0, (LPARAM)cw);
 			SendMessage(GetDlgItem(hWnd, ID_CLUEWIN), CW_SETCROSSWORD, 0, (LPARAM)cw);
+			g_dirty = 1;
 			break;
 		case ID_HELP_MNU:
 			OpenHelpDialog(hWnd);
@@ -359,12 +366,16 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case ID_GRIDWIN:
 			SendMessage(GetDlgItem(hWnd, ID_CLUEWIN), CW_REFRESH, 0, 0);
+			g_dirty = 1;
 		    break;
 		case ID_UNDO_MNU:
 			Undo(hWnd);
+			if (!undo_hasundos())
+				g_dirty = 0;
 			break;
 		case ID_REDO_MNU:
 			Redo(hWnd);
+			g_dirty = 1;
 			break;
 		default:
 			return DefWindowProc(hWnd, message, wParam, lParam);
@@ -382,6 +393,18 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 		//SetBkColor((HDC)wParam, logbrush.lbColor);
 		//return (BOOL) hbrush;
 		//break;
+	case WM_CLOSE:
+		if (g_dirty)
+		{
+			if (MyMessageBox(hWnd, "You have unsaved data, really quit ?", "Closing", MB_YESNOCANCEL) == IDYES)
+			{
+				DestroyWindow(hWnd);
+			}
+			return 0;
+		}
+		else
+			DestroyWindow(hWnd);
+		break;
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
@@ -541,6 +564,8 @@ static void FillMenus(HWND hwnd)
  // AppendMenu(filemenu, MF_STRING, ID_PRINT_MNU, "Print");
   AppendMenu(filemenu, MF_STRING, ID_HTML_MNU, "Export as HTML...");
   AppendMenu(filemenu, MF_STRING, ID_HTML_INTERACTIVE_MNU, "Export as interactive HTML...");
+  AppendMenu(filemenu, MF_SEPARATOR, 0, "");
+  AppendMenu(filemenu, MF_STRING, ID_EXIT_MNU, "Exit");
 
 
   randomgridmenu = CreateMenu();
@@ -619,6 +644,7 @@ static void Load(HWND hwnd)
 		SetPuzzleSize(hwnd, cw->width, cw->height);
 		SendMessage(GetDlgItem(hwnd, ID_GRIDWIN), GW_SETCROSSWORD, 0, (LPARAM) cw);
 		SendMessage(GetDlgItem(hwnd, ID_CLUEWIN), CW_SETCROSSWORD, 0, (LPARAM) cw);
+		g_dirty = 0;
 	 }
   }
   free(fname);
@@ -682,6 +708,7 @@ static void Save(HWND hwnd)
 		  saveasipuz(cw, fname);
 	  else
 		  saveasxpf(cw, fname);
+	  g_dirty = 0;
   }
   free(fname);
 
@@ -739,6 +766,8 @@ static void EditSettings(HWND hwnd)
 		cw->publisher = mystrdupx(settings.publisher);
 		cw->date = mystrdupx(settings.date);
 		cw->copyright = mystrdupx(settings.copyright);
+
+		g_dirty = 1;
 	}
 	
 }
@@ -752,6 +781,7 @@ static void SetSize(HWND hwnd)
   if(OpenSizeDialog(hwnd, &width, &height))
   {
     SetPuzzleSize(hwnd, width, height);
+	g_dirty = 1;
   }
 }
 
@@ -947,6 +977,7 @@ static void GenFromWordList(HWND hwnd)
 
     SendMessage(GetDlgItem(hwnd, ID_GRIDWIN), GW_SETCROSSWORD, 0, (LPARAM) cw);
     SendMessage(GetDlgItem(hwnd, ID_CLUEWIN), CW_SETCROSSWORD, 0, (LPARAM) cw);
+	g_dirty = 1;
   }
 
   killwordlist(list, N);

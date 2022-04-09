@@ -1,12 +1,16 @@
 #include <Windows.h>
 
 #define ID_OK_BUT 1
+#define ID_CANCEL_BUT 2
+#define ID_YES_BUT 3
+#define ID_NO_BUT 4
 
 typedef struct
 {
 	const char* message;
 	const char* caption;
 	int flags;
+	int returnvalue;
 } MESSAGEBOX;
 
 static HFONT g_hcaptionfont;
@@ -15,7 +19,7 @@ static HFONT g_hmessagefont;
 static void killmessagebox(MESSAGEBOX* mb);
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 static void CreateControls(HWND hwnd, MESSAGEBOX* mb);
-static void GetMessageBoxSize(HWND hparent, const char *caption, const char* message, int* width, int* height);
+static void GetMessageBoxSize(HWND hparent, const char *caption, const char* message, int type, int* width, int* height);
 static void GetMultiLineTextSize(HDC hdc, const char* text, SIZE* sz);
 
 void RegisterMyMessageBox(HINSTANCE hInstance)
@@ -41,7 +45,7 @@ void RegisterMyMessageBox(HINSTANCE hInstance)
 	metrics.cbSize = sizeof(NONCLIENTMETRICS);
 	SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS), &metrics, 0);
 	g_hmessagefont = CreateFontIndirect(&metrics.lfMessageFont);
-	//g_hcaptionfont = CreateFontIndirect(&metrics.lfCaptionFont);
+	g_hcaptionfont = CreateFontIndirect(&metrics.lfCaptionFont);
 }
 
 int MyMessageBox(HWND hparent, const char* message, const char* caption, int flags)
@@ -52,8 +56,9 @@ int MyMessageBox(HWND hparent, const char* message, const char* caption, int fla
 	MSG msg;
 	int width, height;
 	HWND hwnd = 0;
+	int answer = IDOK;
 
-	GetMessageBoxSize(hparent, caption, message, &width, &height);
+	GetMessageBoxSize(hparent, caption, message, flags,  &width, &height);
 	GetWindowRect(hparent, &rect);
 	x = rect.left + (rect.right - rect.left - width) / 2;
 	y = rect.top + (rect.bottom - rect.top - height) / 2;
@@ -64,6 +69,7 @@ int MyMessageBox(HWND hparent, const char* message, const char* caption, int fla
 	mb->caption = caption;
 	mb->message = message;
 	mb->flags = flags;
+	mb->returnvalue = IDOK;
 
 	hwnd = CreateWindowEx(
 		WS_EX_CLIENTEDGE,
@@ -93,8 +99,9 @@ int MyMessageBox(HWND hparent, const char* message, const char* caption, int fla
 		}
 	}
 
+	answer = mb->returnvalue;
 	killmessagebox(mb);
-	return 0;
+	return answer;
 
 error_exit:
 	killmessagebox(mb);
@@ -130,6 +137,19 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 		switch (LOWORD(wParam))
 		{
 		case ID_OK_BUT: // OK Button
+			mb->returnvalue = IDOK;
+			DestroyWindow(hwnd);
+			return 0;
+		case  ID_YES_BUT:
+			mb->returnvalue = IDYES;
+			DestroyWindow(hwnd);
+			return 0;
+		case ID_NO_BUT:
+			mb->returnvalue = IDNO;
+			DestroyWindow(hwnd);
+			return 0;
+		case ID_CANCEL_BUT:
+			mb->returnvalue = IDCANCEL;
 			DestroyWindow(hwnd);
 			return 0;
 		}
@@ -164,28 +184,89 @@ static void CreateControls(HWND hwnd, MESSAGEBOX *mb)
 	SetWindowText(hctl, mb->message);
 
 
-	hctl = CreateWindowEx(
-		0,
-		"button",
-		"OK",
-		WS_CHILD | WS_VISIBLE,
-		rect.right / 2 - 25,
-		rect.bottom - 50,
-		50,
-		20,
-		hwnd,
-		(HMENU)ID_OK_BUT,
-		(HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
-		0
-	);
+	if (mb->flags == MB_OK)
+	{
+		hctl = CreateWindowEx(
+			0,
+			"button",
+			"OK",
+			WS_CHILD | WS_VISIBLE,
+			rect.right / 2 - 25,
+			rect.bottom - 50,
+			50,
+			20,
+			hwnd,
+			(HMENU)ID_OK_BUT,
+			(HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
+			0
+		);
+		SendMessage(hctl, WM_SETFONT, (WPARAM)g_hcaptionfont, TRUE);
+	}
+	else if (mb->flags == MB_YESNOCANCEL)
+	{
+		hctl = CreateWindowEx(
+			0,
+			"button",
+			"Yes",
+			WS_CHILD | WS_VISIBLE,
+			10,
+			rect.bottom - 50,
+			50,
+			20,
+			hwnd,
+			(HMENU)ID_YES_BUT,
+			(HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
+			0
+		);
+		SendMessage(hctl, WM_SETFONT, (WPARAM)g_hcaptionfont, TRUE);
+
+		hctl = CreateWindowEx(
+			0,
+			"button",
+			"No",
+			WS_CHILD | WS_VISIBLE,
+			70,
+			rect.bottom - 50,
+			50,
+			20,
+			hwnd,
+			(HMENU)ID_NO_BUT,
+			(HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
+			0
+		);
+		SendMessage(hctl, WM_SETFONT, (WPARAM)g_hcaptionfont, TRUE);
+
+
+		hctl = CreateWindowEx(
+			0,
+			"button",
+			"Cancel",
+			WS_CHILD | WS_VISIBLE,
+			130,
+			rect.bottom - 50,
+			80,
+			20,
+			hwnd,
+			(HMENU)ID_CANCEL_BUT,
+			(HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
+			0
+		);
+		SendMessage(hctl, WM_SETFONT, (WPARAM)g_hcaptionfont, TRUE);
+	}
 
 }
 
-static void GetMessageBoxSize(HWND hparent, const char *caption, const char* message, int* width, int* height)
+static void GetMessageBoxSize(HWND hparent, const char *caption, const char* message, int type, int* width, int* height)
 {
 	HDC hdc = GetDC(hparent);
 	SIZE sz;
 	int w, h;
+	int minimumwidth;
+
+	if (type == MB_OK)
+		minimumwidth = 250;
+	else if (type == MB_YESNOCANCEL)
+		minimumwidth = 300;
 
 	SelectObject(hdc, g_hmessagefont);
 	GetTextExtentPoint32(hdc, message, strlen(caption), &sz);
@@ -195,8 +276,8 @@ static void GetMessageBoxSize(HWND hparent, const char *caption, const char* mes
 	h = sz.cy + 150;
 	if (w < sz.cx + 50)
 		w = sz.cx + 50;
-	if (w < 250)
-		w = 250;
+	if (w < minimumwidth)
+		w = minimumwidth;
 	if (width)
 		*width = w;
 	if (height)
