@@ -26,7 +26,7 @@ int fsaveasipuz(CROSSWORD *cw, FILE *fp)
    int x, y;
 
    fprintf(fp, "{\n");
-   fprintf(fp, "\"origin\": \"Crossword designer by Malcolm McLean\",\n");
+   fprintf(fp, "\"origin\": \"Crossword Designer by Malcolm McLean\",\n");
    fprintf(fp, "\"version\": \"http://ipuz.org/v1\",\n");
    fprintf(fp, "\"kind\": [\"http://ipuz.org/crossword#1\"],\n");
    fprintf(fp, "\"empty\": \"0\",\n");
@@ -40,7 +40,12 @@ int fsaveasipuz(CROSSWORD *cw, FILE *fp)
       fprintf(fp, "    [");
       for (x = 0; x < cw->width; x++)
       {
-         fprintf(fp, "%d", cw->numbers[y*cw->width +x]);
+          if (cw->numbers[y * cw->width + x])
+              fprintf(fp, "%d", cw->numbers[y * cw->width + x]);
+          else if (cw->grid[y * cw->width + x])
+              fprintf(fp, "0");
+          else
+              fprintf(fp, "\"#\"");
          if (x < cw->width -1)
            fprintf(fp, ",");
       }
