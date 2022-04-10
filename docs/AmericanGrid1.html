@@ -1,0 +1,390 @@
+<html>
+<head>
+<script type = "text/javascript">
+/*
+  check is a single-char string is an upper case letter
+*/
+function isupper(ch)
+{
+  var val = ch.charCodeAt(0);
+  if(val >= 65 && val <= 90)
+    {return true;}
+  else
+    {return false;}
+}
+
+/*
+  generate a list of square numbers for a puzzle
+  Params: puzzle - the puzzle. Filled squares must return true for isalpha()
+          width - puzzle width
+		  height - puzzle height
+  Returns list of numbers (most will be zero)
+*/
+function generatenumbers(puzzle, width, height)
+{
+  var answer;
+  var north;
+  var south;
+  var east;
+  var west;
+  var i, ii;
+  var j = 1;
+
+  answer = new Array();
+  for(i=0;i<height;i++)
+  {
+    for(ii=0;ii<width;ii++)
+    {
+        answer[i*width+ii] = 0;
+	  north = 0;
+	  south = 0;
+	  west = 0;
+	  east = 0;
+	  if(! isupper( puzzle[i*width+ii]))
+        {
+	    continue;
+        }
+	  if(i == 0 || ! isupper( puzzle[(i-1)*width+ii]) )
+        {
+		north = 1;
+        }
+	  if(i == height -1 || ! isupper(puzzle[(i+1)*width+ii]))
+        {
+	    south = 1;
+        }
+	  if(ii == 0 || !isupper(puzzle[i*width+ii-1]))
+        {
+          west = 1;
+        }
+	  if(ii == width -1 || ! isupper(puzzle[i*width+ii+1]))
+        {
+	    east = 1;
+        }
+	  if(north == 1 && south == 0)
+        {
+	    answer[i*width+ii] = j++;
+        }
+	  else if(west == 1 && east == 0)
+        {
+	    answer[i*width+ii] = j++;
+        }
+	}
+    }
+  return answer;
+}
+
+
+/*
+  fletcher hash function for checksum.
+  This version operates on a strign and returns a number
+*/
+
+function fletcher( data )
+{
+  var sum1 = 0xffff;
+  var sum2 = 0xffff;
+  var tlen;
+  var len = data.length;
+  var i = 0;
+
+  while (len) 
+  {
+    if(len > 360) {tlen = 360;} else {tlen = len;};
+    len -= tlen;
+    do 
+	{
+      sum1 += data.charCodeAt(i);
+      sum2 += sum1;
+      i++;
+     } while (--tlen);
+     sum1 = (sum1 & 0xffff) + (sum1 >> 16);
+     sum2 = (sum2 & 0xffff) + (sum2 >> 16);
+  }
+   /* Second reduction step to reduce sums to 16 bits */
+   sum1 = (sum1 & 0xffff) + (sum1 >> 16);
+   sum2 = (sum2 & 0xffff) + (sum2 >> 16);
+ 
+   return sum2 << 16 | sum1;
+}
+
+  
+function cellContents(number, ch)
+{
+    var answer;
+    if(ch == " ")
+    {
+      ch = "&nbsp;";
+    }
+    ch = "<font face = \"courier\"><b>" + ch + "</b></font>"; 
+    if(number == 0)
+    {
+      answer = "<sup><font size = \"1\">&nbsp;&nbsp;</font></sup>" + ch;
+    }
+    else if(number <= 9)
+    {
+      answer = "<sup><font size =\"1\">" + number + "&nbsp;</font></sup>" + ch;
+    }
+    else
+    {
+      answer = "<sup><font size = \"1\">" + number + "</font></sup>" +ch;
+    }
+    
+    return answer;
+}
+
+
+  
+function crossword(grid, width, height, checksum) {
+    var i;
+
+    this.grid = grid;
+    this.width = width;
+    this.height = height;
+    this.checksum = checksum;
+    this.selx = 0;
+    this.sely = 0;
+    this.numbers = generatenumbers(grid, width, height);
+    this.entered = "";
+    for(i=0;i<width*height;i++)
+    {
+      if(grid[i] == "X")
+      {
+        this.entered += " "; 
+      }
+      else
+      {
+         this.entered += ".";
+      }
+    }
+   
+
+    this.setUpTable = function() {
+      var x;
+      var y;
+
+      for(y=0;y<this.height;y++)
+      {
+        var row = document.getElementById('myCrossword').insertRow(y);
+        for(x=0;x<this.width;x++)
+        {
+          var cell = row.insertCell(x);
+          if(this.grid[y*this.width+x] == 'X')
+          {
+            cell.setAttribute("bgcolor", "#FFFFFF");
+            cell.innerHTML = cellContents(this.numbers[y*this.width+x], " ");
+          }
+          else
+          {
+            cell.innerHTML = cellContents(0, " ");
+          }
+        }
+      }
+      this.setSelected();
+    }
+
+    this.setSelected = function(){
+      var x=document.getElementById('myCrossword').rows[this.sely].cells;
+      if(this.grid[this.sely*this.width+this.selx] == 'X')
+      {
+         x[this.selx].setAttribute("bgcolor", "#00FF00");
+      }
+      else
+      {
+         x[this.selx].setAttribute("bgcolor", "#008000");
+      }
+     
+    }
+
+    this.unsetSelected = function() {
+      var x=document.getElementById('myCrossword').rows[this.sely].cells;
+       if(this.grid[this.sely*this.width+this.selx] == 'X')
+       {
+         x[this.selx].setAttribute("bgcolor", "#FFFFFF"); 
+       }
+       else
+       {
+         x[this.selx].setAttribute("bgcolor", "#000000");
+       }
+
+    }
+
+    this.setCell = function(keyCode) {
+      var index = this.sely * this.width + this.selx;
+      var x=document.getElementById('myCrossword').rows[this.sely].cells;
+
+      if(this.grid[this.sely*this.width+this.selx] == 'X')
+      {
+         x[this.selx].innerHTML = cellContents(this.numbers[this.sely*this.width+this.selx], String.fromCharCode(keyCode));
+         var newsolution = this.entered.substr(0, index-1) +
+           String.fromCharCode(keyCode) + this.entered.substr(index + 1);
+         this.entered = newsolution;
+      }
+
+    }
+}
+
+  var cw;
+
+
+function GetChar (event){
+            var keyCode = ('which' in event) ? event.which : event.keyCode;
+           // alert ("The Unicode key code is: " + keyCode);
+
+            if(keyCode == 37)
+            {
+               if(cw.selx > 0) 
+               { cw.unsetSelected();
+                 cw.selx -= 1;
+                 cw.setSelected();
+               };
+            }
+            else if(keyCode == 39)
+            {
+               if(cw.selx < cw.width-1) 
+               {
+                 cw.unsetSelected();
+                 cw.selx += 1;
+                 cw.setSelected();
+               };
+            }
+            else if(keyCode == 38)
+            {
+               if(cw.sely > 0) 
+               {
+                 cw.unsetSelected();
+                 cw.sely -= 1;
+                 cw.setSelected();
+               };
+               event.preventDefault();
+
+            }
+            else if(keyCode == 40)
+            {
+               if(cw.sely < cw.height-1)
+               {
+                 cw.unsetSelected();
+                 cw.sely += 1;
+                 cw.setSelected();
+               }
+               event.preventDefault();
+            }
+            else if(keyCode >= 97 && keyCode <= 122)
+            {
+              cw.setCell(keyCode - 97 + 65);
+            }
+            else if(keyCode >= 65 && keyCode <= 90)
+            {
+              cw.setCell(keyCode);
+            }
+            
+            
+
+        }
+function loadMe() {
+cw = new crossword(
+           "..XXXXX..XXXXXX" + 
+           ".XXXXXX.XXXXXXX" + 
+           "XXXXXXX.XXXXXXX" + 
+           "XXXXX.XXXXX.XXX" + 
+           "XXXX.XXXXX.XXXX" + 
+           "XXX.XXXXX.XXXXX" + 
+           ".XXXXX.XXXXXXXX" + 
+           "...XXXX.XXXX..." + 
+           "XXXXXXXX.XXXXX." + 
+           "XXXXX.XXXXX.XXX" + 
+           "XXXX.XXXXX.XXXX" + 
+           "XXX.XXXXX.XXXXX" + 
+           "XXXXXXX.XXXXXXX" + 
+           "XXXXXXX.XXXXXX." + 
+           "XXXXXX..XXXXX..", 
+15, 15, 100);
+cw.setUpTable();
+}
+</script>
+</head>
+<body onkeydown="GetChar (event);" onload = "loadMe();">
+<table id = 'myCrossword', bgcolor = "#000000">
+</table>
+<table width = 375>
+<thead> <th width = "50%"> Across </th> <th width = "50%"> Down </th> </thead>
+<tbody>
+<td valign = "top">
+<b>1.</b> Too old<br>
+<b>6.</b> "Set them to stun"<br>
+<b>12.</b> Neolithic burial mounds<br>
+<b>13.</b> one note musical instrument<br>
+<b>14.</b> Rejects<br>
+<b>15.</b> Little squares of cloth or tissue paper<br>
+<b>16.</b> Most favoured guests<br>
+<b>17.</b> Non-,usical sound<br>
+<b>19.</b> Management (abbreviation)<br>
+<b>20.</b> Run away<br>
+<b>21.</b> Classification of fiction<br>
+<b>22.</b> Extinct New Zealand bird<br>
+<b>23.</b> Little child<br>
+<b>24.</b> Faithful<br>
+<b>25.</b> Most expensive steak<br>
+<b>26.</b> Artificial silk<br>
+<b>28.</b> Put on the small screen<br>
+<b>30.</b> Laid by birds<br>
+<b>32.</b> Arctic people<br>
+<b>33.</b> Very arrogant people<br>
+<b>37.</b> Never spends any money<br>
+<b>40.</b> Crazily active<br>
+<b>41.</b> Things<br>
+<b>43.</b> Japanese theatre show<br>
+<b>45.</b> Scottish valley<br>
+<b>46.</b> Air control on beer barrel<br>
+<b>47.</b> Look at hungrily<br>
+<b>48.</b> Aluminimum nitride<br>
+<b>49.</b> Irishheir<br>
+<b>50.</b> Happy way of teaching reading<br>
+<b>51.</b> Man in crow's nest<br>
+<b>53.</b> More frequently<br>
+<b>55.</b> Pumpellyite<br>
+<b>56.</b> Fashion consumer<br>
+<b>57.</b> Under (Scottish)<br>
+<b>58.</b> Islamic verses<br>
+</td>
+<td valign = "top">
+<b>1.</b> Thomas' state<br>
+<b>2.</b> Entertain<br>
+<b>3.</b> Small growth of hair<br>
+<b>4.</b> Santa's helper<br>
+<b>5.</b> Micky Mouse company<br>
+<b>6.</b> transient stage<br>
+<b>7.</b> Farm labourer<br>
+<b>8.</b> Question<br>
+<b>9.</b> Proddings<br>
+<b>10.</b> Praises for dead<br>
+<b>11.</b> Say again<br>
+<b>12.</b> Thief in Star Wars<br>
+<b>13.</b> Spun round<br>
+<b>14.</b> Vessel without a keel<br>
+<b>18.</b> Details man<br>
+<b>21.</b> Clashing honours<br>
+<b>22.</b> Bee residences<br>
+<b>24.</b> Rational thought<br>
+<b>25.</b> Italian town with famous castle<br>
+<b>27.</b> Electric car<br>
+<b>29.</b> Let me<br>
+<b>31.</b> Crowded flowers<br>
+<b>33.</b> Warthog<br>
+<b>34.</b> Fancy frings<br>
+<b>35.</b> Single unit of music<br>
+<b>36.</b> Mix clockwise or anticlockwise<br>
+<b>38.</b> Motors<br>
+<b>39.</b> Expensive car<br>
+<b>42.</b> Arm joints<br>
+<b>44.</b> Successor<br>
+<b>46.</b> Opposite to North<br>
+<b>47.</b> Musical work<br>
+<b>49.</b> Throw<br>
+<b>50.</b> A sailor<br>
+<b>52.</b> Chinese language group<br>
+<b>54.</b> French fire<br>
+</td>
+</tbody>
+</table>
+</body>
+</html>
