@@ -9,6 +9,14 @@ H3 {
 margin-left: 80px;
 }
 
+IMG {
+margin-left: 80px;
+}
+
+TABLE {
+margin-left: 80px;
+}
+
 p {
 margin-left: 80px;
 margin-right: 150px;
@@ -18,19 +26,21 @@ margin-right: 150px;
 <BODY>
 <H1> Crossword Designer </H1>
 <P>
-Crossword Designer is a program to construct crosswords. It is avialable for Microsoft Windows.
+Crossword Designer is a program to construct crosswords. It is available for Microsoft Windows.
 It is suitable for designing crosswords for educational use, or a for a church or club 
 magazine. It is free and open source. It's not intended to be a competitor to commercial
 crossword design packages, but to cater to the occasional user.
+</P>
 <P>
 To get Crossword Designer simply download the executable from 
 <A href="https://github.com/MalcolmMcLean/CrosswordDesigner/releases/latest/download/CrosswordDesigner.exe">
-CrosswordDesigner.exe</A>. It is a Windows executable with no dependencies. If you are a developer
+CrosswordDesigner.exe</A>. It is a Windows executable with no dependencies. If you are a developer and
 want to contribute to program or wish to submit a bug report or suggestion, the project is hosted 
 on GitHub
 <A href="https://github.com/MalcolmMcLean/CrosswordDesigner">here</A>.
 </P> 
-</P>
+<IMG src="images/Screenshot.png" alt="Screenshot" width=640px></IMG>
+<BR></BR>
 <H3> Basic use </H3>
 <P>
 Crossword Designer is very simple to use. Use the arrow keys or the mouse to move the green
@@ -43,9 +53,9 @@ magazine, the hand-generated method is probably the best way.
 <H3> Auto fill </H3>
 <P>
 Crossword construction software wouldn't be crossword construction software without an
-auto-fill method. Crosword designer lets you choose the word difficulty level. It then
-auto-fill any empty spaces on the grid, when you select "Fill grid" from the edit menu.
-English-style crossowrds usually auto-fill almost instantaneously. American-style
+auto-fill method. Crosword Designer lets you choose the word difficulty level. It then
+auto-fill any empty spaces on the grid, when you select &quot;Fill grid&quot; from the edit menu.
+English-style crosswords usually auto-fill almost instantaneously. American-style
 grids with densely-interlocking words are much more challenging. Try to choose a grid
 which has separate regions with only one or two connections between them, and not too
 many long words. Or try filling in some of the longer words, which you have to do for 
@@ -55,6 +65,14 @@ American-style crosswords which is difficult to avoid. American-style grids can 
 many hours to auto-fill, and might never fill at all.
 </P>
 <H3> Computer-assisted filling </H3>
+<TABLE>
+<TR>
+<TD valign="top"><IMG src="images/WordMatcher.png" alt="wordmatcher" width=256px></IMG></TD>
+<TD valign="top"><IMG src="images/Anagram.png" alt="anagramfinder" width=256px></IMG></TD> 
+</TR>
+<TR><TD style="text-align:center;font-size:small;font-weight:bold;">Word Matcher</TD>
+<TD style="text-align:center;font-size:small;font-weight:bold;">Anagram Finder</TD></TR>
+</TABLE>
 <P>
 Whilst using the auto-fill to generate a complete crossword from a random starter grid is
 fun, to create a high-quality crossword it is necessary to have some human input. The
@@ -83,11 +101,12 @@ format it in your own software), and the clues as text. Paste into the desktop
 publishing software and format for your specific needs.
 </P>
 <P>
-If you are publishing the crosswords on the web, Crossword Designer offers two exprt
+If you are publishing the crosswords on the web, Crossword Designer offers two export
 options, static HTML and interactive HTML. Static HTML allows the end user to print 
-off the crossword to ccomplete with pencil and paper. Interactive HTML creates a
+off the crossword to complete with pencil and paper. Interactive HTML creates a
 page with Javascript in which he can enter the solution. An example can be found
-<A href="AmericanGrid1.html"> here </A>.
+<A href="AmericanGrid1.html"> here </A>. You can just out up these pages and link to
+them from your own website, or edit them simply to match your house style. 
 </P>
 </BODY>
 </HTML>
